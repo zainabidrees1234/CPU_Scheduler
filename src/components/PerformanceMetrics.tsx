@@ -6,41 +6,48 @@ interface PerformanceMetricsProps {
 }
 
 export default function PerformanceMetrics({ metrics }: PerformanceMetricsProps) {
-  const fmt = (v: number | string | null | undefined) =>
-    v !== null && v !== undefined && v !== '' ? v : '\u2014';
+  const fmt = (v: number | string | null | undefined, decimals?: number) => {
+    if (v !== null && v !== undefined && v !== '') {
+      if (typeof v === 'number' && decimals !== undefined) {
+        return v.toFixed(decimals);
+      }
+      return v;
+    }
+    return '\u2014';
+  };
 
   const cards = [
     {
       label: 'Avg Waiting Time',
-      value: fmt(metrics.avgWaitingTime),
+      value: fmt(metrics.avgWaitingTime, 2),
       unit: 'units',
       icon: Clock,
       color: '#ffd43b',
     },
     {
       label: 'Avg Turnaround Time',
-      value: fmt(metrics.avgTurnaroundTime),
+      value: fmt(metrics.avgTurnaroundTime, 2),
       unit: 'units',
       icon: Timer,
       color: '#ff6b6b',
     },
     {
       label: 'CPU Utilization',
-      value: fmt(metrics.cpuUtilization),
+      value: fmt(metrics.cpuUtilization, 1),
       unit: '%',
       icon: Cpu,
       color: '#00d4ff',
     },
     {
       label: 'Throughput',
-      value: fmt(metrics.throughput),
+      value: fmt(metrics.throughput, 3),
       unit: 'proc/unit',
       icon: Activity,
       color: '#51cf66',
     },
     {
       label: 'Avg Response Time',
-      value: fmt(metrics.avgResponseTime),
+      value: fmt(metrics.avgResponseTime, 2),
       unit: 'units',
       icon: Zap,
       color: '#a855f7',

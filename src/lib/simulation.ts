@@ -38,6 +38,17 @@ function computeMetrics(
     };
   }
 
+  if (totalTime <= 0) {
+    return {
+      avgWaitingTime: 0,
+      avgTurnaroundTime: 0,
+      cpuUtilization: 0,
+      throughput: 0,
+      avgResponseTime: 0,
+      completionOrder: [],
+    };
+  }
+
   const avgWaitingTime = parseFloat(
     (procs.reduce((s, p) => s + p.waitingTime, 0) / n).toFixed(2)
   );

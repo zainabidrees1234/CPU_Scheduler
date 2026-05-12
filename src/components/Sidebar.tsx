@@ -81,8 +81,8 @@ export default function Sidebar({
 
   const handleAdd = () => {
     if (burstTime <= 0 || isRAMFull) return;
-    // Use priority value only for priority algorithms; otherwise use default 0
-    const effectivePriority = isPriorityAlgorithm ? priority : 0;
+    // Use priority value only for priority algorithms; otherwise use default 1
+    const effectivePriority = isPriorityAlgorithm ? priority : 1;
     onAddProcess(arrivalTime, burstTime, effectivePriority);
     setArrivalTime(0);
     setBurstTime(1);
