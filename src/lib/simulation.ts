@@ -322,7 +322,7 @@ function runPriority(processes: Process[], preemptive: boolean, agingInterval: n
   }
 
   const metrics = computeMetrics(procs, gantt, currentTime);
-  return { ganttBlocks: gantt, metrics, updatedProcesses: procs };
+  return { ganttBlocks: gantt, metrics, updatedProcesses: procs, effectivePriorities: Object.fromEntries(effectivePriority) };
 }
 
 // ─────────────────────────────────────────────
@@ -631,7 +631,7 @@ export function adaptiveFeedback(
 
   // Check for starvation: any process waiting much longer than average
   const readyProcesses = processes.filter(p => p.status === 'Ready' || p.status === 'Waiting');
-  const hasStarvation = readyProcesses.some(p => p.waitingTime > avgWaitingTime * 2.5);
+  const hasStarvation = readyProcesses.some(p => p.waitingTime > avgWaitingTime * 1.5);
 
   // Detect high variance in burst times
   const burstTimes = processes.map(p => p.burstTime);
