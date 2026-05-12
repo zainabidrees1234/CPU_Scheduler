@@ -25,7 +25,7 @@ const EMPTY_METRICS: Metrics = {
 function App() {
   // Refs to store data that doesn't require re-renders
   const fullScheduleRef = useRef<GanttBlock[]>([]);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const updatedProcessesRef = useRef<Process[]>([]);
   const finalMetricsRef = useRef<Metrics>(EMPTY_METRICS);
 
