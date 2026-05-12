@@ -356,11 +356,6 @@ function runRoundRobin(processes: Process[], quantum: number): SimulationResult 
       gantt.push({ pid: current.pid, start, end: currentTime, color: current.color });
     }
 
-    // Enqueue newly arrived processes
-    procs
-      .filter(p => p.arrivalTime <= currentTime && !enqueued.has(p.id) && p.remainingTime > 0)
-      .forEach(p => { queue.push(p); enqueued.add(p.id); });
-
     if (current.remainingTime === 0) {
       current.completionTime = currentTime;
       current.turnaroundTime = current.completionTime - current.arrivalTime;
@@ -371,6 +366,11 @@ function runRoundRobin(processes: Process[], quantum: number): SimulationResult 
       // Re-enqueue at end of queue
       queue.push(current);
     }
+
+    // Enqueue newly arrived processes
+    procs
+      .filter(p => p.arrivalTime <= currentTime && !enqueued.has(p.id) && p.remainingTime > 0)
+      .forEach(p => { queue.push(p); enqueued.add(p.id); });
   }
 
   const metrics = computeMetrics(procs, gantt, currentTime);
