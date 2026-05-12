@@ -29,6 +29,8 @@ function App() {
   const [processes, setProcesses] = useState<Process[]>([]);
   const [algorithm, setAlgorithm] = useState<SchedulingAlgorithm>('fcfs');
   const [timeQuantum, setTimeQuantum] = useState(2);
+  const [mlfqLevels, setMlfqLevels] = useState(3);
+  const [mlfqQuantums, setMlfqQuantums] = useState<number[]>([2, 4]);
   const [speed, setSpeed] = useState(5);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -75,7 +77,7 @@ function App() {
     if (processes.length === 0) return;
 
     // Run simulation — compute full schedule upfront
-    const result = startSimulation(processes, algorithm, timeQuantum);
+    const result = startSimulation(processes, algorithm, timeQuantum, mlfqLevels, mlfqQuantums);
     fullScheduleRef.current = result.ganttBlocks;
     updatedProcessesRef.current = result.updatedProcesses;
     finalMetricsRef.current = result.metrics;
@@ -86,7 +88,7 @@ function App() {
     setIsPaused(false);
     setProcesses(result.updatedProcesses);
     setMetrics(result.metrics);
-  }, [processes, algorithm, timeQuantum]);
+  }, [processes, algorithm, timeQuantum, mlfqLevels, mlfqQuantums]);
 
   const handlePause = useCallback(() => {
     setIsPaused(true);
@@ -200,6 +202,10 @@ function App() {
         onAlgorithmChange={setAlgorithm}
         timeQuantum={timeQuantum}
         onTimeQuantumChange={setTimeQuantum}
+        mlfqLevels={mlfqLevels}
+        onMlfqLevelsChange={setMlfqLevels}
+        mlfqQuantums={mlfqQuantums}
+        onMlfqQuantumsChange={setMlfqQuantums}
         speed={speed}
         onSpeedChange={setSpeed}
         isRunning={isRunning}

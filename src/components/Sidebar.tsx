@@ -11,6 +11,10 @@ interface SidebarProps {
   onAlgorithmChange: (algo: SchedulingAlgorithm) => void;
   timeQuantum: number;
   onTimeQuantumChange: (tq: number) => void;
+  mlfqLevels: number;
+  onMlfqLevelsChange: (levels: number) => void;
+  mlfqQuantums: number[];
+  onMlfqQuantumsChange: (quantums: number[]) => void;
   speed: number;
   onSpeedChange: (speed: number) => void;
   isRunning: boolean;
@@ -39,6 +43,10 @@ export default function Sidebar({
   onAlgorithmChange,
   timeQuantum,
   onTimeQuantumChange,
+  mlfqLevels,
+  onMlfqLevelsChange,
+  mlfqQuantums,
+  onMlfqQuantumsChange,
   speed,
   onSpeedChange,
   isRunning,
@@ -163,6 +171,68 @@ export default function Sidebar({
               onChange={e => onTimeQuantumChange(Math.max(1, parseInt(e.target.value) || 1))}
               className="input-field py-1.5"
             />
+          </div>
+        )}
+        {algorithm === 'mlfq' && (
+          <div className="mt-3 pt-3 border-t border-[#1a1a35] space-y-2">
+            <div>
+              <label className="text-[10px] text-[#4a4a65] mb-0.5 block">Queue Levels</label>
+              <select
+                value={mlfqLevels}
+                onChange={e => {
+                  const newLevels = Math.max(2, Math.min(4, parseInt(e.target.value)));
+                  onMlfqLevelsChange(newLevels);
+                  // Adjust quantums array to match levels (keep existing, pad or trim as needed)
+                  const newQuantums = [...mlfqQuantums];
+                  if (newQuantums.length < newLevels - 1) {
+                    // Pad with doubled values
+                    while (newQuantums.length < newLevels - 1) {
+                      const lastVal = newQuantums[newQuantums.length - 1] || 4;
+                      newQuantums.push(lastVal * 2);
+                    }
+                  } else if (newQuantums.length > newLevels - 1) {
+                    // Trim
+                    newQuantums.splice(newLevels - 1);
+                  }
+                  onMlfqQuantumsChange(newQuantums);
+                }}
+                className="input-field py-1.5 cursor-pointer text-xs"
+              >
+                <option value={2}>2 levels</option>
+                <option value={3}>3 levels</option>
+                <option value={4}>4 levels</option>
+              </select>
+            </div>
+            {/* Quantum inputs for each level except the last (which is FCFS/Infinity) */}
+            <div className="space-y-1.5">
+              {Array.from({ length: mlfqLevels - 1 }).map((_, idx) => (
+                <div key={idx}>
+                  <label className="text-[10px] text-[#4a4a65] mb-0.5 block">
+                    Q{idx} Quantum
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={mlfqQuantums[idx] || (idx === 0 ? 2 : 4)}
+                    onChange={e => {
+                      const newQuantums = [...mlfqQuantums];
+                      newQuantums[idx] = Math.max(1, parseInt(e.target.value) || 1);
+                      onMlfqQuantumsChange(newQuantums);
+                    }}
+                    className="input-field py-1.5"
+                  />
+                </div>
+              ))}
+              {/* Last level always FCFS (disabled, shows ∞) */}
+              <div>
+                <label className="text-[10px] text-[#4a4a65] mb-0.5 block">
+                  Q{mlfqLevels - 1} (FCFS)
+                </label>
+                <div className="input-field py-1.5 text-[#00d4ff] font-semibold text-xs flex items-center justify-center cursor-not-allowed opacity-60">
+                  ∞
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

@@ -337,13 +337,35 @@ function runRoundRobin(processes: Process[], quantum: number): SimulationResult 
 // 3 queues: Q0 (RR q=2), Q1 (RR q=4), Q2 (FCFS)
 // Process demoted after using full quantum without completing
 // ─────────────────────────────────────────────
-function runMLFQ(processes: Process[]): SimulationResult {
+function runMLFQ(processes: Process[], numQueues: number = 3, quantumsInput: number[] = [2, 4]): SimulationResult {
   const procs = cloneProcesses(processes);
   procs.forEach(p => { p.remainingTime = p.burstTime; });
   procs.sort((a, b) => a.arrivalTime - b.arrivalTime);
 
-  const QUANTUMS = [2, 4, Infinity]; // Q0, Q1, Q2
-  const queues: Process[][] = [[], [], []];
+  // Validate and build quantums array
+  // numQueues: 2, 3, or 4
+  // quantumsInput should have numQueues-1 entries (last always Infinity)
+  let validNumQueues = Math.max(2, Math.min(4, numQueues));
+  let QUANTUMS: number[] = [];
+  
+  // Fill quantums: use input for first (validNumQueues-1), pad if needed, last is Infinity
+  for (let i = 0; i < validNumQueues; i++) {
+    if (i < quantumsInput.length) {
+      QUANTUMS.push(quantumsInput[i]);
+    } else if (i === validNumQueues - 1) {
+      // Last queue is always Infinity (FCFS)
+      QUANTUMS.push(Infinity);
+    } else {
+      // Pad with doubled last value
+      const lastVal = QUANTUMS[QUANTUMS.length - 1];
+      QUANTUMS.push(lastVal * 2);
+    }
+  }
+  // Force last to be Infinity
+  QUANTUMS[QUANTUMS.length - 1] = Infinity;
+
+  // Create queues array with correct length
+  const queues: Process[][] = Array.from({ length: validNumQueues }, () => []);
   const processQueue: Map<string, number> = new Map(); // which queue level each process is in
   const enqueued = new Set<string>();
 
@@ -367,7 +389,7 @@ function runMLFQ(processes: Process[]): SimulationResult {
   while (completed < n) {
     // Pick from highest non-empty queue
     let selectedQueue = -1;
-    for (let q = 0; q < 3; q++) {
+    for (let q = 0; q < validNumQueues; q++) {
       if (queues[q].length > 0) { selectedQueue = q; break; }
     }
 
@@ -413,7 +435,7 @@ function runMLFQ(processes: Process[]): SimulationResult {
       completed++;
     } else {
       // Demote to next queue if not already in lowest
-      const nextQueue = Math.min(selectedQueue + 1, 2);
+      const nextQueue = Math.min(selectedQueue + 1, validNumQueues - 1);
       processQueue.set(current.id, nextQueue);
       queues[nextQueue].push(current);
     }
@@ -429,7 +451,9 @@ function runMLFQ(processes: Process[]): SimulationResult {
 export function startSimulation(
   processes: Process[],
   algorithm: SchedulingAlgorithm,
-  timeQuantum: number = 2
+  timeQuantum: number = 2,
+  mlfqLevels: number = 3,
+  mlfqQuantums: number[] = [2, 4]
 ): SimulationResult {
   if (processes.length === 0) {
     return {
@@ -460,7 +484,7 @@ export function startSimulation(
     case 'round-robin':
       return runRoundRobin(processes, timeQuantum);
     case 'mlfq':
-      return runMLFQ(processes);
+      return runMLFQ(processes, mlfqLevels, mlfqQuantums);
     default:
       return runFCFS(processes);
   }
