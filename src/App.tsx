@@ -28,6 +28,7 @@ function App() {
   });
 
   const [processes, setProcesses] = useState<Process[]>([]);
+  const [animProcesses, setAnimProcesses] = useState<Process[]>([]);
   const [algorithm, setAlgorithm] = useState<SchedulingAlgorithm>('fcfs');
   const [timeQuantum, setTimeQuantum] = useState(2);
   const [mlfqLevels, setMlfqLevels] = useState(3);
@@ -97,6 +98,44 @@ function App() {
     );
   }, [isRunning]);
 
+  // Compute live animation snapshot from the full gantt and current time
+  function computeAnimationState(
+    originalProcesses: Process[],
+    ganttBlocks: GanttBlock[],
+    currentTime: number
+  ): Process[] {
+    return originalProcesses.map(proc => {
+      const blocksForProc = ganttBlocks.filter(
+        b => b.pid === proc.pid && b.pid !== 'IDLE'
+      );
+
+      const totalRunSoFar = blocksForProc.reduce((sum, b) => {
+        const contributed = Math.min(b.end, currentTime) - Math.min(b.start, currentTime);
+        return sum + Math.max(0, contributed);
+      }, 0);
+
+      const remaining = Math.max(0, proc.burstTime - totalRunSoFar);
+
+      const isCurrentlyRunning = blocksForProc.some(
+        b => b.start <= currentTime && currentTime < b.end
+      );
+
+      const isCompleted = blocksForProc.some(b => b.end <= currentTime) && remaining === 0;
+
+      let status: Process['status'];
+      if (isCurrentlyRunning) status = 'Running';
+      else if (isCompleted) status = 'Completed';
+      else if (proc.arrivalTime <= currentTime && !isCompleted) status = 'Ready';
+      else status = 'Waiting';
+
+      return {
+        ...proc,
+        remainingTime: remaining,
+        status,
+      };
+    });
+  }
+
   const handleStart = useCallback(() => {
     if (processes.length === 0) return;
 
@@ -110,7 +149,9 @@ function App() {
     setSimulationTime(0);
     setIsRunning(true);
     setIsPaused(false);
-    setProcesses(result.updatedProcesses);
+    // Do not replace the canonical `processes` state with final results here.
+    // Instead compute initial animation snapshot at time=0.
+    setAnimProcesses(computeAnimationState(processes, result.ganttBlocks, 0));
     setMetrics(result.metrics);
   }, [processes, algorithm, timeQuantum, mlfqLevels, mlfqQuantums, agingEnabled, agingInterval]);
 
@@ -130,11 +171,11 @@ function App() {
     fullScheduleRef.current = result.ganttBlocks;
     updatedProcessesRef.current = result.updatedProcesses;
     finalMetricsRef.current = result.metrics;
-
     // Reset animation state to restart from beginning
     setSimulationTime(0);
     setIsPaused(false); // Auto-resume
-    setProcesses(result.updatedProcesses);
+    // Do not overwrite canonical `processes`; compute initial animation snapshot
+    setAnimProcesses(computeAnimationState(processes, result.ganttBlocks, 0));
     setMetrics(result.metrics);
   }, [processes, algorithm, timeQuantum, mlfqLevels, mlfqQuantums, agingEnabled, agingInterval]);
 
@@ -158,6 +199,7 @@ function App() {
       completionOrder: [],
     });
     setProcesses([]);
+    setAnimProcesses([]);
     setShowAlgorithmChangeBanner(false);
   }, []);
 
@@ -194,19 +236,23 @@ function App() {
             ? Math.max(...fullScheduleRef.current.map(b => b.end))
             : 0;
 
-        // Stop if we've reached the end
+        // Stop if we've reached the end — finalize anim state
         if (prev >= maxTime) {
           setIsRunning(false);
           if (intervalRef.current) {
             clearInterval(intervalRef.current);
             intervalRef.current = null;
           }
+          // Lock final animation snapshot
+          setAnimProcesses(computeAnimationState(processes, fullScheduleRef.current, maxTime));
           return prev;
         }
 
         // Only increment if not paused
         if (!isPaused) {
-          return prev + 1;
+          const newTime = prev + 1;
+          setAnimProcesses(computeAnimationState(processes, fullScheduleRef.current, newTime));
+          return newTime;
         }
         return prev;
       });
@@ -235,13 +281,11 @@ function App() {
   );
   const currentProcess =
     currentGanttBlock && currentGanttBlock.pid !== 'IDLE'
-      ? processes.find(p => p.pid === currentGanttBlock.pid)
+      ? animProcesses.find(p => p.pid === currentGanttBlock.pid) || null
       : null;
 
-  // Processes completed by current time
-  const completedProcesses = processes.filter(
-    p => p.completionTime !== null && p.completionTime <= simulationTime
-  );
+  // Processes completed by current time (from animation snapshot)
+  const completedProcesses = animProcesses.filter(p => p.status === 'Completed');
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#0a0a1a]">
@@ -279,7 +323,7 @@ function App() {
       <div className="w-64 min-w-[256px] h-screen border-r border-[#1a1a30] flex flex-col p-3 gap-3">
         {/* RAM — takes remaining space, scrollable */}
         <div className="flex-1 min-h-0">
-          <RAMVisualization processes={processes} />
+          <RAMVisualization processes={animProcesses} />
         </div>
 
         {/* Flow indicator */}
@@ -291,7 +335,7 @@ function App() {
 
         {/* Ready Queue — fixed at bottom */}
         <div className="flex-shrink-0">
-          <ReadyQueue processes={processes} />
+          <ReadyQueue processes={animProcesses} />
         </div>
       </div>
 
