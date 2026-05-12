@@ -1,225 +1,554 @@
-import type { Process, GanttBlock, PerformanceMetrics, SchedulingAlgorithm } from '../types';
+import type {
+  Process,
+  SchedulingAlgorithm,
+  GanttBlock,
+  PerformanceMetrics,
+} from '../types';
 
-/**
- * Starts the simulation by running the selected scheduling algorithm.
- * Updates the Gantt chart, metrics, RAM, CPU, and ready queue visualizations.
- */
-export function startSimulation(
-  _processes: Process[],
-  _algorithm: SchedulingAlgorithm,
-  _timeQuantum: number
-): { ganttBlocks: GanttBlock[]; metrics: PerformanceMetrics } {
-  // TODO: Implement simulation start logic
-  return { ganttBlocks: [], metrics: defaultMetrics() };
+export interface SimulationResult {
+  ganttBlocks: GanttBlock[];
+  metrics: PerformanceMetrics;
+  updatedProcesses: Process[];
 }
 
-/**
- * Pauses the currently running simulation.
- * Freezes the CPU, stops time advancement, preserves all state.
- */
-export function pauseSimulation(): void {
-  // TODO: Implement pause logic
+// ─────────────────────────────────────────────
+// HELPER: deep-clone processes so originals are untouched
+// ─────────────────────────────────────────────
+function cloneProcesses(processes: Process[]): Process[] {
+  return processes.map(p => ({ ...p }));
 }
 
-/**
- * Resumes a paused simulation from where it left off.
- * Restarts CPU timer and continues scheduling.
- */
-export function resumeSimulation(): void {
-  // TODO: Implement resume logic
-}
-
-/**
- * Resets the entire simulation to initial state.
- * Clears all processes, Gantt chart, metrics, RAM, CPU, and queue.
- */
-export function resetSimulation(): void {
-  // TODO: Implement reset logic
-}
-
-/**
- * Adds a new process to the simulation with the given parameters.
- * Assigns a unique color and places it in the first available RAM slot.
- */
-export function addProcess(
-  _pid: string,
-  _arrivalTime: number,
-  _burstTime: number,
-  _priority: number
-): Process | null {
-  // TODO: Implement process addition logic
-  return null;
-}
-
-/**
- * Removes a process from the simulation by its PID.
- * Frees its RAM slot and removes it from any queue.
- */
-export function removeProcess(_pid: string): void {
-  // TODO: Implement process removal logic
-}
-
-/**
- * First Come First Served scheduling algorithm.
- * Processes are executed in order of their arrival time.
- * Non-preemptive: once a process starts, it runs to completion.
- */
-export function calculateFCFS(_processes: Process[]): { ganttBlocks: GanttBlock[]; metrics: PerformanceMetrics } {
-  // TODO: Implement FCFS scheduling algorithm
-  return { ganttBlocks: [], metrics: defaultMetrics() };
-}
-
-/**
- * Shortest Job First scheduling algorithm.
- * If preemptive (SRTF), a newly arrived shorter job preempts the current one.
- * If non-preemptive, the shortest job is selected when CPU becomes free.
- */
-export function calculateSJF(
-  _processes: Process[],
-  _preemptive: boolean
-): { ganttBlocks: GanttBlock[]; metrics: PerformanceMetrics } {
-  // TODO: Implement SJF scheduling algorithm
-  return { ganttBlocks: [], metrics: defaultMetrics() };
-}
-
-/**
- * Priority scheduling algorithm.
- * Lower priority number = higher priority.
- * If preemptive, a higher priority process can preempt the current one.
- * If non-preemptive, the highest priority process is selected when CPU is free.
- */
-export function calculatePriority(
-  _processes: Process[],
-  _preemptive: boolean
-): { ganttBlocks: GanttBlock[]; metrics: PerformanceMetrics } {
-  // TODO: Implement Priority scheduling algorithm
-  return { ganttBlocks: [], metrics: defaultMetrics() };
-}
-
-/**
- * Round Robin scheduling algorithm.
- * Each process gets a fixed time quantum. After the quantum expires,
- * the process is preempted and moved to the back of the ready queue.
- */
-export function calculateRoundRobin(
-  _processes: Process[],
-  _quantum: number
-): { ganttBlocks: GanttBlock[]; metrics: PerformanceMetrics } {
-  // TODO: Implement Round Robin scheduling algorithm
-  return { ganttBlocks: [], metrics: defaultMetrics() };
-}
-
-/**
- * Multilevel Feedback Queue scheduling algorithm.
- * Uses multiple queues with different priority levels and time quanta.
- * Processes move between queues based on their behavior (CPU-bound vs I/O-bound).
- */
-export function calculateMLFQ(_processes: Process[]): { ganttBlocks: GanttBlock[]; metrics: PerformanceMetrics } {
-  // TODO: Implement MLFQ scheduling algorithm
-  return { ganttBlocks: [], metrics: defaultMetrics() };
-}
-
-/**
- * Draws the Gantt chart based on the computed schedule.
- * Each block is colored by process and labeled with PID and time range.
- * The chart grows from left to right as the simulation progresses.
- */
-export function drawGanttChart(_schedule: GanttBlock[]): void {
-  // TODO: Implement Gantt chart rendering
-}
-
-/**
- * Updates the RAM visualization to reflect which processes are currently in memory.
- * Occupied slots show process cards; empty slots show dashed borders.
- */
-export function updateRAMVisualization(_processes: Process[]): void {
-  // TODO: Implement RAM visualization update
-}
-
-/**
- * Updates the CPU display to show the currently running process.
- * Shows PID, remaining burst time, and a circular progress indicator.
- * When idle, displays "IDLE" with a dimmed glow.
- */
-export function updateCPUDisplay(_currentProcess: Process | null): void {
-  // TODO: Implement CPU display update
-}
-
-/**
- * Updates the ready queue visualization.
- * Shows process badges in FIFO order with an arrow flow direction indicator.
- */
-export function updateReadyQueue(_queue: Process[]): void {
-  // TODO: Implement ready queue update
-}
-
-/**
- * Calculates all performance metrics from the schedule and process data.
- * Returns average waiting time, turnaround time, CPU utilization,
- * throughput, response time, and completion order.
- */
-export function calculateMetrics(
-  _schedule: GanttBlock[],
-  _processes: Process[]
+// ─────────────────────────────────────────────
+// HELPER: compute metrics from a completed process list + gantt
+// ─────────────────────────────────────────────
+function computeMetrics(
+  procs: Process[],
+  gantt: GanttBlock[],
+  totalTime: number
 ): PerformanceMetrics {
-  // TODO: Implement metrics calculation
-  return defaultMetrics();
-}
-
-/**
- * Generates adaptive feedback based on current metrics and algorithm choice.
- * Recommends algorithm switches to improve performance (e.g., suggest Round Robin
- * when waiting times are high, or SJF when burst times vary widely).
- */
-export function adaptiveFeedback(
-  _algorithm: SchedulingAlgorithm,
-  _processes: Process[],
-  _metrics: PerformanceMetrics
-): string {
-  // TODO: Implement adaptive feedback logic
-  if (_processes.length === 0) {
-    return 'Add processes to begin simulation.';
+  const n = procs.length;
+  if (n === 0) {
+    return {
+      avgWaitingTime: 0,
+      avgTurnaroundTime: 0,
+      cpuUtilization: 0,
+      throughput: 0,
+      avgResponseTime: 0,
+      completionOrder: [],
+    };
   }
-  if (_algorithm !== 'round-robin' && _processes.length > 3) {
-    return 'Consider switching to Round Robin to reduce waiting time for processes with varying burst times.';
-  }
-  if (_algorithm === 'fcfs' && _processes.some(p => p.arrivalTime > 0)) {
-    return 'FCFS may cause convoy effect. Consider SJF or Round Robin for better turnaround times.';
-  }
-  return 'Current algorithm selection looks appropriate for the process mix.';
-}
 
-/**
- * Animates a process entering RAM — slides the process card into
- * an available RAM slot from the bottom with a smooth transition.
- */
-export function animateProcessToRAM(_pid: string): void {
-  // TODO: Implement RAM entry animation
-}
+  const avgWaitingTime = parseFloat(
+    (procs.reduce((s, p) => s + p.waitingTime, 0) / n).toFixed(2)
+  );
+  const avgTurnaroundTime = parseFloat(
+    (procs.reduce((s, p) => s + p.turnaroundTime, 0) / n).toFixed(2)
+  );
+  const avgResponseTime = parseFloat(
+    (procs.reduce((s, p) => s + p.responseTime, 0) / n).toFixed(2)
+  );
 
-/**
- * Animates a process leaving RAM and entering the CPU —
- * slides the process card from its RAM slot toward the right (toward CPU).
- */
-export function animateProcessToCPU(_pid: string): void {
-  // TODO: Implement CPU entry animation
-}
+  // CPU busy time = sum of all gantt blocks that aren't IDLE
+  const busyTime = gantt
+    .filter(b => b.pid !== 'IDLE')
+    .reduce((s, b) => s + (b.end - b.start), 0);
+  const cpuUtilization = parseFloat(
+    ((busyTime / totalTime) * 100).toFixed(1)
+  );
 
-/**
- * Animates a preempted process returning from CPU back to RAM —
- * slides the process card back into the topmost available RAM slot.
- */
-export function animateProcessPreempted(_pid: string): void {
-  // TODO: Implement preemption return animation
-}
+  const throughput = parseFloat((n / totalTime).toFixed(3));
 
-function defaultMetrics(): PerformanceMetrics {
+  // Completion order: sort by completionTime
+  const completionOrder = [...procs]
+    .sort((a, b) => (a.completionTime ?? 0) - (b.completionTime ?? 0))
+    .map(p => p.pid);
+
   return {
-    avgWaitingTime: 0,
-    avgTurnaroundTime: 0,
-    cpuUtilization: 0,
-    throughput: 0,
-    avgResponseTime: 0,
-    completionOrder: [],
+    avgWaitingTime,
+    avgTurnaroundTime,
+    cpuUtilization,
+    throughput,
+    avgResponseTime,
+    completionOrder,
   };
+}
+
+// ─────────────────────────────────────────────
+// ALGORITHM 1: FCFS — First Come First Served
+// ─────────────────────────────────────────────
+function runFCFS(processes: Process[]): SimulationResult {
+  const procs = cloneProcesses(processes);
+  // Sort by arrival time, then by pid as tie-breaker
+  procs.sort((a, b) => a.arrivalTime - b.arrivalTime || a.pid.localeCompare(b.pid));
+
+  const gantt: GanttBlock[] = [];
+  let currentTime = 0;
+
+  for (const p of procs) {
+    // CPU idles if next process hasn't arrived yet
+    if (currentTime < p.arrivalTime) {
+      gantt.push({ pid: 'IDLE', start: currentTime, end: p.arrivalTime, color: '#1a1a2e' });
+      currentTime = p.arrivalTime;
+    }
+
+    p.startTime = currentTime;
+    p.responseTime = currentTime - p.arrivalTime;
+    p.waitingTime = currentTime - p.arrivalTime;
+
+    gantt.push({ pid: p.pid, start: currentTime, end: currentTime + p.burstTime, color: p.color });
+    currentTime += p.burstTime;
+
+    p.completionTime = currentTime;
+    p.turnaroundTime = p.completionTime - p.arrivalTime;
+    p.remainingTime = 0;
+    p.status = 'Completed';
+  }
+
+  const metrics = computeMetrics(procs, gantt, currentTime);
+  return { ganttBlocks: gantt, metrics, updatedProcesses: procs };
+}
+
+// ─────────────────────────────────────────────
+// ALGORITHM 2 & 3: SJF — Non-Preemptive & Preemptive (SRTF)
+// ─────────────────────────────────────────────
+function runSJF(processes: Process[], preemptive: boolean): SimulationResult {
+  const procs = cloneProcesses(processes);
+  procs.forEach(p => { p.remainingTime = p.burstTime; });
+
+  const gantt: GanttBlock[] = [];
+  let currentTime = 0;
+  let completed = 0;
+  const n = procs.length;
+
+  while (completed < n) {
+    // Available processes: arrived and not completed
+    const available = procs.filter(
+      p => p.arrivalTime <= currentTime && p.remainingTime > 0
+    );
+
+    if (available.length === 0) {
+      // Find next arrival
+      const next = procs
+        .filter(p => p.remainingTime > 0)
+        .sort((a, b) => a.arrivalTime - b.arrivalTime)[0];
+      if (!next) break;
+      gantt.push({ pid: 'IDLE', start: currentTime, end: next.arrivalTime, color: '#1a1a2e' });
+      currentTime = next.arrivalTime;
+      continue;
+    }
+
+    // Pick shortest remaining time
+    available.sort((a, b) => a.remainingTime - b.remainingTime || a.arrivalTime - b.arrivalTime);
+    const current = available[0];
+
+    if (current.startTime === null) {
+      current.startTime = currentTime;
+      current.responseTime = currentTime - current.arrivalTime;
+    }
+
+    if (!preemptive) {
+      // Run to completion
+      const start = currentTime;
+      currentTime += current.remainingTime;
+      gantt.push({ pid: current.pid, start, end: currentTime, color: current.color });
+      current.remainingTime = 0;
+      current.completionTime = currentTime;
+      current.turnaroundTime = current.completionTime - current.arrivalTime;
+      current.waitingTime = current.turnaroundTime - current.burstTime;
+      current.status = 'Completed';
+      completed++;
+    } else {
+      // SRTF: run for 1 unit at a time, check for preemption
+      const start = currentTime;
+      currentTime += 1;
+      current.remainingTime -= 1;
+
+      // Merge with last gantt block if same process
+      if (gantt.length > 0 && gantt[gantt.length - 1].pid === current.pid) {
+        gantt[gantt.length - 1].end = currentTime;
+      } else {
+        gantt.push({ pid: current.pid, start, end: currentTime, color: current.color });
+      }
+
+      if (current.remainingTime === 0) {
+        current.completionTime = currentTime;
+        current.turnaroundTime = current.completionTime - current.arrivalTime;
+        current.waitingTime = current.turnaroundTime - current.burstTime;
+        current.status = 'Completed';
+        completed++;
+      }
+    }
+  }
+
+  const metrics = computeMetrics(procs, gantt, currentTime);
+  return { ganttBlocks: gantt, metrics, updatedProcesses: procs };
+}
+
+// ─────────────────────────────────────────────
+// ALGORITHM 4 & 5: Priority — Non-Preemptive & Preemptive
+// Lower number = higher priority
+// ─────────────────────────────────────────────
+function runPriority(processes: Process[], preemptive: boolean): SimulationResult {
+  const procs = cloneProcesses(processes);
+  procs.forEach(p => { p.remainingTime = p.burstTime; });
+
+  const gantt: GanttBlock[] = [];
+  let currentTime = 0;
+  let completed = 0;
+  const n = procs.length;
+
+  while (completed < n) {
+    const available = procs.filter(
+      p => p.arrivalTime <= currentTime && p.remainingTime > 0
+    );
+
+    if (available.length === 0) {
+      const next = procs
+        .filter(p => p.remainingTime > 0)
+        .sort((a, b) => a.arrivalTime - b.arrivalTime)[0];
+      if (!next) break;
+      gantt.push({ pid: 'IDLE', start: currentTime, end: next.arrivalTime, color: '#1a1a2e' });
+      currentTime = next.arrivalTime;
+      continue;
+    }
+
+    // Pick highest priority (lowest number), break ties by arrival time
+    available.sort((a, b) => a.priority - b.priority || a.arrivalTime - b.arrivalTime);
+    const current = available[0];
+
+    if (current.startTime === null) {
+      current.startTime = currentTime;
+      current.responseTime = currentTime - current.arrivalTime;
+    }
+
+    if (!preemptive) {
+      const start = currentTime;
+      currentTime += current.remainingTime;
+      gantt.push({ pid: current.pid, start, end: currentTime, color: current.color });
+      current.remainingTime = 0;
+      current.completionTime = currentTime;
+      current.turnaroundTime = current.completionTime - current.arrivalTime;
+      current.waitingTime = current.turnaroundTime - current.burstTime;
+      current.status = 'Completed';
+      completed++;
+    } else {
+      const start = currentTime;
+      currentTime += 1;
+      current.remainingTime -= 1;
+
+      if (gantt.length > 0 && gantt[gantt.length - 1].pid === current.pid) {
+        gantt[gantt.length - 1].end = currentTime;
+      } else {
+        gantt.push({ pid: current.pid, start, end: currentTime, color: current.color });
+      }
+
+      if (current.remainingTime === 0) {
+        current.completionTime = currentTime;
+        current.turnaroundTime = current.completionTime - current.arrivalTime;
+        current.waitingTime = current.turnaroundTime - current.burstTime;
+        current.status = 'Completed';
+        completed++;
+      }
+    }
+  }
+
+  const metrics = computeMetrics(procs, gantt, currentTime);
+  return { ganttBlocks: gantt, metrics, updatedProcesses: procs };
+}
+
+// ─────────────────────────────────────────────
+// ALGORITHM 6: Round Robin
+// ─────────────────────────────────────────────
+function runRoundRobin(processes: Process[], quantum: number): SimulationResult {
+  const procs = cloneProcesses(processes);
+  procs.forEach(p => { p.remainingTime = p.burstTime; });
+  procs.sort((a, b) => a.arrivalTime - b.arrivalTime);
+
+  const gantt: GanttBlock[] = [];
+  let currentTime = 0;
+  let completed = 0;
+  const n = procs.length;
+  const queue: Process[] = [];
+  const enqueued = new Set<string>();
+
+  // Enqueue processes that arrive at time 0
+  procs
+    .filter(p => p.arrivalTime <= currentTime)
+    .forEach(p => { queue.push(p); enqueued.add(p.id); });
+
+  while (completed < n) {
+    if (queue.length === 0) {
+      // Find next arriving process
+      const next = procs
+        .filter(p => !enqueued.has(p.id) && p.remainingTime > 0)
+        .sort((a, b) => a.arrivalTime - b.arrivalTime)[0];
+      if (!next) break;
+      gantt.push({ pid: 'IDLE', start: currentTime, end: next.arrivalTime, color: '#1a1a2e' });
+      currentTime = next.arrivalTime;
+      procs
+        .filter(p => p.arrivalTime <= currentTime && !enqueued.has(p.id))
+        .forEach(p => { queue.push(p); enqueued.add(p.id); });
+      continue;
+    }
+
+    const current = queue.shift()!;
+    if (current.remainingTime <= 0) continue;
+
+    if (current.startTime === null) {
+      current.startTime = currentTime;
+      current.responseTime = currentTime - current.arrivalTime;
+    }
+
+    const runTime = Math.min(quantum, current.remainingTime);
+    const start = currentTime;
+    currentTime += runTime;
+    current.remainingTime -= runTime;
+
+    // Merge gantt blocks for same process
+    if (gantt.length > 0 && gantt[gantt.length - 1].pid === current.pid) {
+      gantt[gantt.length - 1].end = currentTime;
+    } else {
+      gantt.push({ pid: current.pid, start, end: currentTime, color: current.color });
+    }
+
+    // Enqueue newly arrived processes
+    procs
+      .filter(p => p.arrivalTime <= currentTime && !enqueued.has(p.id) && p.remainingTime > 0)
+      .forEach(p => { queue.push(p); enqueued.add(p.id); });
+
+    if (current.remainingTime === 0) {
+      current.completionTime = currentTime;
+      current.turnaroundTime = current.completionTime - current.arrivalTime;
+      current.waitingTime = current.turnaroundTime - current.burstTime;
+      current.status = 'Completed';
+      completed++;
+    } else {
+      // Re-enqueue at end of queue
+      queue.push(current);
+    }
+  }
+
+  const metrics = computeMetrics(procs, gantt, currentTime);
+  return { ganttBlocks: gantt, metrics, updatedProcesses: procs };
+}
+
+// ─────────────────────────────────────────────
+// ALGORITHM 7: MLFQ — Multilevel Feedback Queue
+// 3 queues: Q0 (RR q=2), Q1 (RR q=4), Q2 (FCFS)
+// Process demoted after using full quantum without completing
+// ─────────────────────────────────────────────
+function runMLFQ(processes: Process[]): SimulationResult {
+  const procs = cloneProcesses(processes);
+  procs.forEach(p => { p.remainingTime = p.burstTime; });
+  procs.sort((a, b) => a.arrivalTime - b.arrivalTime);
+
+  const QUANTUMS = [2, 4, Infinity]; // Q0, Q1, Q2
+  const queues: Process[][] = [[], [], []];
+  const processQueue: Map<string, number> = new Map(); // which queue level each process is in
+  const enqueued = new Set<string>();
+
+  const gantt: GanttBlock[] = [];
+  let currentTime = 0;
+  let completed = 0;
+  const n = procs.length;
+
+  function enqueueArrivals(time: number) {
+    procs
+      .filter(p => p.arrivalTime <= time && !enqueued.has(p.id) && p.remainingTime > 0)
+      .forEach(p => {
+        queues[0].push(p);
+        processQueue.set(p.id, 0);
+        enqueued.add(p.id);
+      });
+  }
+
+  enqueueArrivals(currentTime);
+
+  while (completed < n) {
+    // Pick from highest non-empty queue
+    let selectedQueue = -1;
+    for (let q = 0; q < 3; q++) {
+      if (queues[q].length > 0) { selectedQueue = q; break; }
+    }
+
+    if (selectedQueue === -1) {
+      // No process ready — advance to next arrival
+      const next = procs
+        .filter(p => !enqueued.has(p.id) && p.remainingTime > 0)
+        .sort((a, b) => a.arrivalTime - b.arrivalTime)[0];
+      if (!next) break;
+      gantt.push({ pid: 'IDLE', start: currentTime, end: next.arrivalTime, color: '#1a1a2e' });
+      currentTime = next.arrivalTime;
+      enqueueArrivals(currentTime);
+      continue;
+    }
+
+    const current = queues[selectedQueue].shift()!;
+    if (current.remainingTime <= 0) continue;
+
+    if (current.startTime === null) {
+      current.startTime = currentTime;
+      current.responseTime = currentTime - current.arrivalTime;
+    }
+
+    const quantum = QUANTUMS[selectedQueue];
+    const runTime = Math.min(quantum, current.remainingTime);
+    const start = currentTime;
+    currentTime += runTime;
+    current.remainingTime -= runTime;
+
+    if (gantt.length > 0 && gantt[gantt.length - 1].pid === current.pid) {
+      gantt[gantt.length - 1].end = currentTime;
+    } else {
+      gantt.push({ pid: current.pid, start, end: currentTime, color: current.color });
+    }
+
+    enqueueArrivals(currentTime);
+
+    if (current.remainingTime === 0) {
+      current.completionTime = currentTime;
+      current.turnaroundTime = current.completionTime - current.arrivalTime;
+      current.waitingTime = current.turnaroundTime - current.burstTime;
+      current.status = 'Completed';
+      completed++;
+    } else {
+      // Demote to next queue if not already in lowest
+      const nextQueue = Math.min(selectedQueue + 1, 2);
+      processQueue.set(current.id, nextQueue);
+      queues[nextQueue].push(current);
+    }
+  }
+
+  const metrics = computeMetrics(procs, gantt, currentTime);
+  return { ganttBlocks: gantt, metrics, updatedProcesses: procs };
+}
+
+// ─────────────────────────────────────────────
+// MAIN ENTRY: startSimulation
+// ─────────────────────────────────────────────
+export function startSimulation(
+  processes: Process[],
+  algorithm: SchedulingAlgorithm,
+  timeQuantum: number = 2
+): SimulationResult {
+  if (processes.length === 0) {
+    return {
+      ganttBlocks: [],
+      metrics: {
+        avgWaitingTime: 0,
+        avgTurnaroundTime: 0,
+        cpuUtilization: 0,
+        throughput: 0,
+        avgResponseTime: 0,
+        completionOrder: [],
+      },
+      updatedProcesses: [],
+    };
+  }
+
+  switch (algorithm) {
+    case 'fcfs':
+      return runFCFS(processes);
+    case 'sjf-non-preemptive':
+      return runSJF(processes, false);
+    case 'sjf-preemptive':
+      return runSJF(processes, true);
+    case 'priority-non-preemptive':
+      return runPriority(processes, false);
+    case 'priority-preemptive':
+      return runPriority(processes, true);
+    case 'round-robin':
+      return runRoundRobin(processes, timeQuantum);
+    case 'mlfq':
+      return runMLFQ(processes);
+    default:
+      return runFCFS(processes);
+  }
+}
+
+// ─────────────────────────────────────────────
+// ADAPTIVE FEEDBACK ENGINE
+// Analyzes current state and recommends a better algorithm
+// ─────────────────────────────────────────────
+export function adaptiveFeedback(
+  algorithm: SchedulingAlgorithm,
+  processes: Process[],
+  metrics: PerformanceMetrics
+): string {
+  if (processes.length === 0) {
+    return 'Add processes to begin simulation. Adaptive recommendations will appear here.';
+  }
+
+  const { avgWaitingTime, avgTurnaroundTime, cpuUtilization, completionOrder } = metrics;
+
+  // Check for starvation: any process waiting much longer than average
+  const readyProcesses = processes.filter(p => p.status === 'Ready' || p.status === 'Waiting');
+  const hasStarvation = readyProcesses.some(p => p.waitingTime > avgWaitingTime * 2.5);
+
+  // Detect high variance in burst times
+  const burstTimes = processes.map(p => p.burstTime);
+  const avgBurst = burstTimes.reduce((a, b) => a + b, 0) / burstTimes.length;
+  const burstVariance = burstTimes.reduce((s, b) => s + Math.pow(b - avgBurst, 2), 0) / burstTimes.length;
+  const highVariance = Math.sqrt(burstVariance) > avgBurst * 0.5;
+
+  // All processes arrive at same time
+  const allSameArrival = processes.every(p => p.arrivalTime === processes[0].arrivalTime);
+
+  // High priority spread
+  const priorities = processes.map(p => p.priority);
+  const prioritySpread = Math.max(...priorities) - Math.min(...priorities);
+  const highPrioritySpread = prioritySpread > 3;
+
+  // Low CPU utilization
+  const lowUtilization = cpuUtilization > 0 && cpuUtilization < 70;
+
+  // Many processes (interactive workload)
+  const manyProcesses = processes.length >= 5;
+
+  // Now give smart recommendations
+  if (hasStarvation && algorithm === 'priority-non-preemptive') {
+    return '⚠️ Starvation detected! Low-priority processes are starving. Switch to Priority Preemptive with aging, or use Round Robin for fairness.';
+  }
+
+  if (hasStarvation && algorithm === 'sjf-non-preemptive') {
+    return '⚠️ Long processes may be starving. SJF can cause starvation for large burst times. Consider MLFQ which demotes long jobs gracefully.';
+  }
+
+  if (highVariance && algorithm === 'fcfs') {
+    return '💡 Burst times vary significantly. FCFS causes convoy effect here. SJF or SRTF would reduce average waiting time considerably.';
+  }
+
+  if (manyProcesses && algorithm === 'fcfs') {
+    return '💡 With many processes, FCFS is unfair to short jobs. Round Robin ensures every process gets CPU time — ideal for interactive systems.';
+  }
+
+  if (highPrioritySpread && algorithm !== 'priority-preemptive' && algorithm !== 'priority-non-preemptive') {
+    return '💡 Processes have distinct priority levels. Priority Scheduling would leverage this to improve response time for critical processes.';
+  }
+
+  if (allSameArrival && algorithm === 'round-robin') {
+    return '💡 All processes arrive simultaneously. SJF Non-Preemptive would minimize average waiting time better than Round Robin here.';
+  }
+
+  if (manyProcesses && algorithm === 'round-robin') {
+    return '✅ Round Robin is a solid choice for this workload. Consider MLFQ if processes have mixed CPU and I/O behavior for even better throughput.';
+  }
+
+  if (algorithm === 'mlfq') {
+    return '✅ MLFQ is optimal for mixed workloads. Short jobs finish quickly in Q0, long jobs degrade gracefully. Good choice!';
+  }
+
+  if (lowUtilization) {
+    return '⚠️ CPU utilization is low. Check arrival times — there may be gaps. Consider adjusting process arrival times for better throughput.';
+  }
+
+  if (avgWaitingTime > avgTurnaroundTime * 0.6) {
+    return '⚠️ High waiting time relative to turnaround. Try SJF Preemptive (SRTF) to minimize waiting time for short processes.';
+  }
+
+  if (completionOrder.length > 0 && algorithm === 'fcfs') {
+    return '✅ FCFS is simple and fair for uniform workloads. If burst times differ greatly, SJF will outperform FCFS on average waiting time.';
+  }
+
+  return '✅ Current algorithm is performing well for this workload. Try different algorithms to compare performance metrics.';
 }

@@ -54,18 +54,22 @@ function App() {
     setProcesses(prev => [...prev, newProcess]);
   }, [processes]);
 
+  const handleRemoveProcess = useCallback((id: string) => {
+    setProcesses(prev => prev.filter(p => p.id !== id));
+  }, []);
+
   const handleStart = useCallback(() => {
     if (processes.length === 0) return;
     setIsRunning(true);
     setIsPaused(false);
 
+    // Run simulation — get back updated processes with all metrics computed
     const result = startSimulation(processes, algorithm, timeQuantum);
     setGanttBlocks(result.ganttBlocks);
     setMetrics(result.metrics);
 
-    setProcesses(prev =>
-      prev.map(p => ({ ...p, status: 'Completed' as const }))
-    );
+    // Update processes with computed waiting times, turnaround, etc.
+    setProcesses(result.updatedProcesses);
   }, [processes, algorithm, timeQuantum]);
 
   const handlePause = useCallback(() => {
@@ -92,7 +96,10 @@ function App() {
     setProcesses([]);
   }, []);
 
-  const currentProcess = processes.find(p => p.status === 'Running') || null;
+  // Show the last running or first ready process in CPU display
+  const currentProcess =
+    processes.find(p => p.status === 'Running') ||
+    (isRunning ? processes.find(p => p.status === 'Completed') || null : null);
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#0a0a1a]">
