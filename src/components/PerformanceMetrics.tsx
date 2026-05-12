@@ -6,45 +6,48 @@ interface PerformanceMetricsProps {
 }
 
 export default function PerformanceMetrics({ metrics }: PerformanceMetricsProps) {
+  const fmt = (v: number | string | null | undefined) =>
+    v !== null && v !== undefined && v !== '' ? v : '\u2014';
+
   const cards = [
     {
       label: 'Avg Waiting Time',
-      value: metrics.avgWaitingTime || '\u2014',
+      value: fmt(metrics.avgWaitingTime),
       unit: 'units',
       icon: Clock,
       color: '#ffd43b',
     },
     {
       label: 'Avg Turnaround Time',
-      value: metrics.avgTurnaroundTime || '\u2014',
+      value: fmt(metrics.avgTurnaroundTime),
       unit: 'units',
       icon: Timer,
       color: '#ff6b6b',
     },
     {
       label: 'CPU Utilization',
-      value: metrics.cpuUtilization || '\u2014',
+      value: fmt(metrics.cpuUtilization),
       unit: '%',
       icon: Cpu,
       color: '#00d4ff',
     },
     {
       label: 'Throughput',
-      value: metrics.throughput || '\u2014',
+      value: fmt(metrics.throughput),
       unit: 'proc/unit',
       icon: Activity,
       color: '#51cf66',
     },
     {
       label: 'Avg Response Time',
-      value: metrics.avgResponseTime || '\u2014',
+      value: fmt(metrics.avgResponseTime),
       unit: 'units',
       icon: Zap,
       color: '#a855f7',
     },
     {
       label: 'Completion Order',
-      value: metrics.completionOrder.length > 0 ? metrics.completionOrder.join(' \u2192 ') : '\u2014',
+      value: fmt(metrics.completionOrder.length > 0 ? metrics.completionOrder.join(' \u2192 ') : undefined),
       unit: '',
       icon: ListOrdered,
       color: '#ff922b',
