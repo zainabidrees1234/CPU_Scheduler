@@ -271,9 +271,15 @@ function App() {
   // ─────────────────────────────────────────────
 
   // Gantt blocks that have started (revealed) at current time
-  const visibleGanttBlocks = fullScheduleRef.current.filter(
-    block => block.end <= simulationTime
-  );
+  const visibleGanttBlocks = fullScheduleRef.current
+    .filter(block => block.start < simulationTime)
+    .map(block => {
+      if (block.end <= simulationTime) {
+        return block;
+      }
+      // in-progress block: clamp end to current time and mark as in-progress
+      return { ...block, end: simulationTime, inProgress: true } as any;
+    });
 
   // Current process running at this moment
   const currentGanttBlock = fullScheduleRef.current.find(
@@ -349,7 +355,7 @@ function App() {
           onEditProcess={handleEditProcess}
           isSimulationRunning={isRunning}
         />
-        <GanttChart ganttBlocks={visibleGanttBlocks} />
+        <GanttChart ganttBlocks={visibleGanttBlocks} currentTime={simulationTime} />
         <PerformanceMetrics metrics={metrics} />
       </div>
     </div>

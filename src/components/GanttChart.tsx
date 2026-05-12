@@ -2,9 +2,10 @@ import type { GanttBlock } from '../types';
 
 interface GanttChartProps {
   ganttBlocks: GanttBlock[];
+  currentTime?: number;
 }
 
-export default function GanttChart({ ganttBlocks }: GanttChartProps) {
+export default function GanttChart({ ganttBlocks, currentTime }: GanttChartProps) {
   const totalTime = ganttBlocks.length > 0
     ? ganttBlocks[ganttBlocks.length - 1].end - ganttBlocks[0].start
     : 1;
@@ -32,10 +33,16 @@ export default function GanttChart({ ganttBlocks }: GanttChartProps) {
               {ganttBlocks.map((block, index) => {
                 const width = ((block.end - block.start) / totalTime) * 100;
                 const isIdle = block.pid === 'IDLE';
+                const isInProgress = Boolean((block as any).inProgress) || (
+                  typeof currentTime === 'number' &&
+                  block.pid !== 'IDLE' &&
+                  block.start < currentTime &&
+                  block.end === currentTime
+                );
                 return (
                   <div
                     key={index}
-                    className={`gantt-block flex flex-col items-center justify-center text-[10px] font-semibold border-r last:border-r-0 ${isIdle ? 'border-dashed' : ''}`}
+                    className={`gantt-block flex flex-col items-center justify-center text-[10px] font-semibold border-r last:border-r-0 ${isIdle ? 'border-dashed' : ''} ${isInProgress ? 'in-progress' : ''}`}
                     style={{
                       width: `${Math.max(width, 2)}%`,
                       backgroundColor: isIdle ? '#333' : block.color,
@@ -43,6 +50,9 @@ export default function GanttChart({ ganttBlocks }: GanttChartProps) {
                       minWidth: width > 2 ? undefined : '48px',
                       backgroundImage: isIdle ? 'repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 6px, transparent 6px 12px)' : undefined,
                       borderColor: isIdle ? '#4a4a4a' : undefined,
+                      ...(isInProgress
+                        ? { boxShadow: '0 0 18px rgba(255,255,255,0.04)', filter: 'brightness(1.05)', animation: 'flowPulse 1s ease-in-out infinite' }
+                        : {}),
                     }}
                   >
                     <span className="font-bold">{isIdle ? 'IDLE' : block.pid}</span>
