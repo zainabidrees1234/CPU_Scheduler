@@ -239,34 +239,36 @@ function runPriority(processes: Process[], preemptive: boolean, agingInterval: n
     });
     const current = available[0];
 
-    // Reset selected process aging when it starts/runs.
-    // Apply aging only to other ready/waiting processes.
-    if (agingInterval > 0) {
-      agingCounter.set(current.id, 0);
-      procs.forEach(p => {
-        if (
-          p.arrivalTime <= currentTime &&
-          p.remainingTime > 0 &&
-          p.id !== current.id
-        ) {
-          const cnt = (agingCounter.get(p.id) || 0) + 1;
-          if (cnt >= agingInterval) {
-            const cur = effectivePriority.get(p.id) || p.priority;
-            effectivePriority.set(p.id, Math.max(1, cur - 1));
-            agingCounter.set(p.id, 0);
-          } else {
-            agingCounter.set(p.id, cnt);
-          }
-        }
-      });
-    }
-
     if (current.startTime === null) {
       current.startTime = currentTime;
       current.responseTime = currentTime - current.arrivalTime;
     }
 
     if (!preemptive) {
+      if (agingInterval > 0) {
+        agingCounter.set(current.id, 0);
+        const duration = current.remainingTime;
+
+        for (let t = 0; t < duration; t++) {
+          procs.forEach(p => {
+            if (
+              p.arrivalTime <= currentTime + t &&
+              p.remainingTime > 0 &&
+              p.id !== current.id
+            ) {
+              const cnt = (agingCounter.get(p.id) || 0) + 1;
+              if (cnt >= agingInterval) {
+                const cur = effectivePriority.get(p.id) || p.priority;
+                effectivePriority.set(p.id, Math.max(1, cur - 1));
+                agingCounter.set(p.id, 0);
+              } else {
+                agingCounter.set(p.id, cnt);
+              }
+            }
+          });
+        }
+      }
+
       const start = currentTime;
       currentTime += current.remainingTime;
       gantt.push({ pid: current.pid, start, end: currentTime, color: current.color });
@@ -277,6 +279,27 @@ function runPriority(processes: Process[], preemptive: boolean, agingInterval: n
       current.status = 'Completed';
       completed++;
     } else {
+      // Preserve the existing preemptive aging behavior: one scheduler tick equals one time unit.
+      if (agingInterval > 0) {
+        agingCounter.set(current.id, 0);
+        procs.forEach(p => {
+          if (
+            p.arrivalTime <= currentTime &&
+            p.remainingTime > 0 &&
+            p.id !== current.id
+          ) {
+            const cnt = (agingCounter.get(p.id) || 0) + 1;
+            if (cnt >= agingInterval) {
+              const cur = effectivePriority.get(p.id) || p.priority;
+              effectivePriority.set(p.id, Math.max(1, cur - 1));
+              agingCounter.set(p.id, 0);
+            } else {
+              agingCounter.set(p.id, cnt);
+            }
+          }
+        });
+      }
+
       const start = currentTime;
       currentTime += 1;
       current.remainingTime -= 1;
