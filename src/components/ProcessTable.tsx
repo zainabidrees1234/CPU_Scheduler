@@ -49,13 +49,18 @@ export default function ProcessTable({ processes, onRemoveProcess, onEditProcess
       setEditError('Burst time must be greater than 0');
       return;
     }
-    if (editValues.priority < 1) {
+    if (showPriorityColumn && editValues.priority < 1) {
       setEditError('Priority must be at least 1');
       return;
     }
 
+    const sanitizedValues = {
+      ...editValues,
+      priority: showPriorityColumn ? editValues.priority : 1,
+    };
+
     // Call parent callback
-    onEditProcess(process.id, editValues);
+    onEditProcess(process.id, sanitizedValues);
     setEditingId(null);
     setEditValues(null);
     setEditError('');
