@@ -4,6 +4,7 @@ import RAMVisualization from './components/RAMVisualization';
 import ReadyQueue from './components/ReadyQueue';
 import CPUVisualization from './components/CPUVisualization';
 import CompletedProcesses from './components/CompletedProcesses';
+import ProcessTable from './components/ProcessTable';
 import GanttChart from './components/GanttChart';
 import PerformanceMetrics from './components/PerformanceMetrics';
 import { startSimulation } from './lib/simulation';
@@ -72,6 +73,25 @@ function App() {
   const handleRemoveProcess = useCallback((id: string) => {
     setProcesses(prev => prev.filter(p => p.id !== id));
   }, []);
+
+  const handleEditProcess = useCallback((id: string, updatedFields: { arrivalTime: number; burstTime: number; priority: number }) => {
+    // Editing only allowed before simulation starts
+    if (isRunning) return;
+    
+    setProcesses(prev =>
+      prev.map(p =>
+        p.id === id
+          ? {
+              ...p,
+              arrivalTime: updatedFields.arrivalTime,
+              burstTime: updatedFields.burstTime,
+              priority: updatedFields.priority,
+              remainingTime: updatedFields.burstTime, // Reset remaining time
+            }
+          : p
+      )
+    );
+  }, [isRunning]);
 
   const handleStart = useCallback(() => {
     if (processes.length === 0) return;
@@ -258,6 +278,12 @@ function App() {
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         <CPUVisualization currentProcess={currentProcess} isRunning={isRunning} />
         <CompletedProcesses processes={completedProcesses} />
+        <ProcessTable 
+          processes={processes} 
+          onRemoveProcess={handleRemoveProcess}
+          onEditProcess={handleEditProcess}
+          isSimulationRunning={isRunning}
+        />
         <GanttChart ganttBlocks={visibleGanttBlocks} />
         <PerformanceMetrics metrics={metrics} />
       </div>
