@@ -98,6 +98,22 @@ function App() {
     setIsPaused(false);
   }, []);
 
+  const handleReschedule = useCallback(() => {
+    if (processes.length === 0) return;
+
+    // Re-run simulation with all processes (original + newly added)
+    const result = startSimulation(processes, algorithm, timeQuantum, mlfqLevels, mlfqQuantums);
+    fullScheduleRef.current = result.ganttBlocks;
+    updatedProcessesRef.current = result.updatedProcesses;
+    finalMetricsRef.current = result.metrics;
+
+    // Reset animation state to restart from beginning
+    setSimulationTime(0);
+    setIsPaused(false); // Auto-resume
+    setProcesses(result.updatedProcesses);
+    setMetrics(result.metrics);
+  }, [processes, algorithm, timeQuantum, mlfqLevels, mlfqQuantums]);
+
   const handleReset = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -213,6 +229,7 @@ function App() {
         onStart={handleStart}
         onPause={handlePause}
         onResume={handleResume}
+        onReschedule={handleReschedule}
         onReset={handleReset}
         metrics={metrics}
       />

@@ -22,6 +22,7 @@ interface SidebarProps {
   onStart: () => void;
   onPause: () => void;
   onResume: () => void;
+  onReschedule: () => void;
   onReset: () => void;
   metrics: PerformanceMetrics;
 }
@@ -54,6 +55,7 @@ export default function Sidebar({
   onStart,
   onPause,
   onResume,
+  onReschedule,
   onReset,
   metrics,
 }: SidebarProps) {
@@ -272,6 +274,15 @@ export default function Sidebar({
             <RotateCcw className="w-3 h-3" /> Reset
           </button>
         </div>
+        {isPaused && isRunning && (
+          <button
+            onClick={onReschedule}
+            className="btn-primary w-full mt-2 flex items-center justify-center gap-1.5 text-xs py-2"
+          >
+            <Zap className="w-3.5 h-3.5" />
+            Re-schedule
+          </button>
+        )}
       </div>
 
       {/* Adaptive Feedback */}
