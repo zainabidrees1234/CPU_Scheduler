@@ -310,7 +310,7 @@ function App() {
 
   // Gantt blocks that have started (revealed) at current time
   const visibleGanttBlocks = fullScheduleRef.current
-    .filter(block => block.start < simulationTime)
+    .filter(block => block.start <= simulationTime)
     .map(block => {
       if (block.end <= simulationTime) {
         return block;
