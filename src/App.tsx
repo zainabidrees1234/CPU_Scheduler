@@ -46,6 +46,8 @@ function App() {
   });
   const [agingEnabled, setAgingEnabled] = useState(false);
   const [agingInterval, setAgingInterval] = useState(5);
+  const [showAlgorithmChangeBanner, setShowAlgorithmChangeBanner] = useState(false);
+  const prevAlgorithmRef = useRef<SchedulingAlgorithm>(algorithm);
 
   const handleAddProcess = useCallback((arrivalTime: number, burstTime: number, priority: number) => {
     const activeCount = processes.filter(p => p.status !== 'Completed').length;
@@ -156,7 +158,18 @@ function App() {
       completionOrder: [],
     });
     setProcesses([]);
+    setShowAlgorithmChangeBanner(false);
   }, []);
+
+  // Show banner when algorithm changes after a run has occurred
+  useEffect(() => {
+    if (prevAlgorithmRef.current !== algorithm) {
+      // If there is an existing schedule or simulation progressed, show banner
+      const hadRun = isRunning || simulationTime > 0 || fullScheduleRef.current.length > 0;
+      if (hadRun) setShowAlgorithmChangeBanner(true);
+      prevAlgorithmRef.current = algorithm;
+    }
+  }, [algorithm, isRunning, simulationTime]);
 
   // ─────────────────────────────────────────────
   // ANIMATION LOOP: Tick simulation based on speed
@@ -170,8 +183,8 @@ function App() {
       return;
     }
 
-    // Calculate delay: speed 1 = 1000ms, speed 10 = 100ms
-    const delayMs = (11 - speed) * 100;
+    // Calculate delay: speed mapping -> delay = round(800 / speed)
+    const delayMs = Math.round(800 / Math.max(1, speed));
 
     intervalRef.current = setInterval(() => {
       setSimulationTime(prev => {
@@ -258,6 +271,8 @@ function App() {
         agingInterval={agingInterval}
         onAgingEnabledChange={setAgingEnabled}
         onAgingIntervalChange={setAgingInterval}
+        showAlgorithmChangeBanner={showAlgorithmChangeBanner}
+        onDismissAlgorithmChangeBanner={() => setShowAlgorithmChangeBanner(false)}
       />
 
       {/* MIDDLE COLUMN — RAM + Ready Queue */}

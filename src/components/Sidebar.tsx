@@ -29,6 +29,8 @@ interface SidebarProps {
   agingInterval: number;
   onAgingEnabledChange: (enabled: boolean) => void;
   onAgingIntervalChange: (interval: number) => void;
+  showAlgorithmChangeBanner?: boolean;
+  onDismissAlgorithmChangeBanner?: () => void;
 }
 
 const ALGORITHM_OPTIONS: { value: SchedulingAlgorithm; label: string }[] = [
@@ -66,6 +68,8 @@ export default function Sidebar({
   agingInterval,
   onAgingEnabledChange,
   onAgingIntervalChange,
+  showAlgorithmChangeBanner,
+  onDismissAlgorithmChangeBanner,
 }: SidebarProps) {
   const [arrivalTime, setArrivalTime] = useState(0);
   const [burstTime, setBurstTime] = useState(1);
@@ -171,6 +175,14 @@ export default function Sidebar({
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
+        {showAlgorithmChangeBanner && (
+          <div className="mt-2 p-2 rounded-md bg-yellow-400/10 border border-yellow-600 text-[12px] text-yellow-300 flex items-start justify-between gap-2">
+            <div>
+              Algorithm changed. Click Reset then Start to simulate with {ALGORITHM_OPTIONS.find(o => o.value === algorithm)?.label}.
+            </div>
+            <button onClick={() => onDismissAlgorithmChangeBanner && onDismissAlgorithmChangeBanner()} className="ml-2 text-yellow-100 text-sm">Dismiss</button>
+          </div>
+        )}
         {algorithm === 'round-robin' && (
           <div className="mt-2">
             <label className="text-[10px] text-[#4a4a65] mb-0.5 block">Time Quantum</label>

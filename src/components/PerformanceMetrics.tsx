@@ -76,6 +76,11 @@ export default function PerformanceMetrics({ metrics }: PerformanceMetricsProps)
           );
         })}
       </div>
+      {metrics.completionOrder.length > 0 && (
+        <div className="mt-3 text-[10px] text-[#e6b800]">
+          Run with a different algorithm to compare
+        </div>
+      )}
     </div>
   );
 }

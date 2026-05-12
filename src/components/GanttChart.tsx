@@ -27,25 +27,30 @@ export default function GanttChart({ ganttBlocks }: GanttChartProps) {
       ) : (
         <div className="space-y-2">
           {/* Blocks */}
-          <div className="flex rounded-lg overflow-hidden h-12">
-            {ganttBlocks.map((block, index) => {
-              const width = ((block.end - block.start) / totalTime) * 100;
-              return (
-                <div
-                  key={index}
-                  className="gantt-block flex flex-col items-center justify-center text-[10px] font-semibold border-r border-[#0a0a1a] last:border-r-0"
-                  style={{
-                    width: `${Math.max(width, 2)}%`,
-                    backgroundColor: block.color,
-                    color: '#0a0a1a',
-                    minWidth: width > 2 ? undefined : '32px',
-                  }}
-                >
-                  <span className="font-bold">{block.pid}</span>
-                  <span className="opacity-60 text-[8px]">{block.start}-{block.end}</span>
-                </div>
-              );
-            })}
+          <div className="overflow-x-auto">
+            <div className="flex rounded-lg h-12" style={{ minWidth: 'max-content' }}>
+              {ganttBlocks.map((block, index) => {
+                const width = ((block.end - block.start) / totalTime) * 100;
+                const isIdle = block.pid === 'IDLE';
+                return (
+                  <div
+                    key={index}
+                    className={`gantt-block flex flex-col items-center justify-center text-[10px] font-semibold border-r last:border-r-0 ${isIdle ? 'border-dashed' : ''}`}
+                    style={{
+                      width: `${Math.max(width, 2)}%`,
+                      backgroundColor: isIdle ? '#333' : block.color,
+                      color: isIdle ? '#cfcfcf' : '#0a0a1a',
+                      minWidth: width > 2 ? undefined : '48px',
+                      backgroundImage: isIdle ? 'repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 6px, transparent 6px 12px)' : undefined,
+                      borderColor: isIdle ? '#4a4a4a' : undefined,
+                    }}
+                  >
+                    <span className="font-bold">{isIdle ? 'IDLE' : block.pid}</span>
+                    <span className="opacity-60 text-[8px]">{block.start}-{block.end}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {/* Time markers */}
