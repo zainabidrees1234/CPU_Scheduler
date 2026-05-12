@@ -381,7 +381,7 @@ function App() {
 
         {/* Ready Queue — fixed at bottom */}
         <div className="flex-shrink-0">
-          <ReadyQueue processes={animProcesses} />
+          <ReadyQueue processes={isRunning ? animProcesses : processes} />
         </div>
       </div>
 

@@ -306,7 +306,7 @@ export default function Sidebar({
       <div className="px-4 py-3 border-b border-[#1a1a30]">
         <h2 className="section-label mb-2.5">Controls</h2>
         <div className="grid grid-cols-2 gap-1.5">
-          <button onClick={onStart} disabled={isRunning && !isPaused} className="btn-control btn-start disabled:opacity-30 disabled:cursor-not-allowed">
+          <button onClick={onStart} disabled={isRunning} className="btn-control btn-start disabled:opacity-30 disabled:cursor-not-allowed">
             <Play className="w-3 h-3" /> Start
           </button>
           <button onClick={onPause} disabled={!isRunning || isPaused} className="btn-control btn-pause disabled:opacity-30 disabled:cursor-not-allowed">
