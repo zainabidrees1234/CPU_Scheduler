@@ -29,6 +29,9 @@ function App() {
 
   const [processes, setProcesses] = useState<Process[]>([]);
   const [animProcesses, setAnimProcesses] = useState<Process[]>([]);
+  const [rescheduleMessage, setRescheduleMessage] = useState('');
+  const [largeBurstWarning, setLargeBurstWarning] = useState('');
+  const [isSimulationComplete, setIsSimulationComplete] = useState(false);
   const [algorithm, setAlgorithm] = useState<SchedulingAlgorithm>('fcfs');
   const [timeQuantum, setTimeQuantum] = useState(2);
   const [mlfqLevels, setMlfqLevels] = useState(3);
@@ -73,6 +76,9 @@ function App() {
       ramSlot: null,
     };
     setProcesses(prev => [...prev, newProcess]);
+    if (newProcess.burstTime > 500) {
+      setLargeBurstWarning('⚠️ Large burst time detected. Set speed to 10 for faster simulation.');
+    }
   }, [processes]);
 
   const handleRemoveProcess = useCallback((id: string) => {
@@ -177,6 +183,11 @@ function App() {
     // Do not overwrite canonical `processes`; compute initial animation snapshot
     setAnimProcesses(computeAnimationState(processes, result.ganttBlocks, 0));
     setMetrics(result.metrics);
+    setIsSimulationComplete(false);
+
+    // show temporary banner
+    setRescheduleMessage('Simulation restarted to include new process');
+    setTimeout(() => setRescheduleMessage(''), 3000);
   }, [processes, algorithm, timeQuantum, mlfqLevels, mlfqQuantums, agingEnabled, agingInterval]);
 
   const handleReset = useCallback(() => {
@@ -200,6 +211,9 @@ function App() {
     });
     setProcesses([]);
     setAnimProcesses([]);
+    setRescheduleMessage('');
+    setLargeBurstWarning('');
+    setIsSimulationComplete(false);
     setShowAlgorithmChangeBanner(false);
   }, []);
 
@@ -245,6 +259,7 @@ function App() {
           }
           // Lock final animation snapshot
           setAnimProcesses(computeAnimationState(processes, fullScheduleRef.current, maxTime));
+          setIsSimulationComplete(true);
           return prev;
         }
 
@@ -252,6 +267,41 @@ function App() {
         if (!isPaused) {
           const newTime = prev + 1;
           setAnimProcesses(computeAnimationState(processes, fullScheduleRef.current, newTime));
+
+          // Live metrics: compute from updatedProcessesRef for processes completed so far
+          try {
+            const completedSoFar = updatedProcessesRef.current.filter(
+              p => p.completionTime !== null && (p.completionTime as number) <= newTime
+            );
+            if (completedSoFar.length > 0) {
+              // compute live metrics similar to simulation.computeMetrics
+              const n = completedSoFar.length;
+              const avgWaitingTime = parseFloat((completedSoFar.reduce((s, p) => s + p.waitingTime, 0) / n).toFixed(2));
+              const avgTurnaroundTime = parseFloat((completedSoFar.reduce((s, p) => s + p.turnaroundTime, 0) / n).toFixed(2));
+              const avgResponseTime = parseFloat((completedSoFar.reduce((s, p) => s + p.responseTime, 0) / n).toFixed(2));
+
+              const busyTime = fullScheduleRef.current
+                .filter(b => b.pid !== 'IDLE')
+                .reduce((s, b) => {
+                  const contrib = Math.max(0, Math.min(b.end, newTime) - b.start);
+                  return s + contrib;
+                }, 0);
+              const cpuUtilization = parseFloat(((busyTime / Math.max(1, newTime)) * 100).toFixed(1));
+              const throughput = parseFloat((completedSoFar.length / Math.max(1, newTime)).toFixed(3));
+
+              setMetrics({
+                avgWaitingTime,
+                avgTurnaroundTime,
+                cpuUtilization,
+                throughput,
+                avgResponseTime,
+                completionOrder: completedSoFar.sort((a,b)=> (a.completionTime||0)-(b.completionTime||0)).map(p=>p.pid),
+              });
+            }
+          } catch (e) {
+            // swallow errors in live metric update
+          }
+
           return newTime;
         }
         return prev;
@@ -349,6 +399,13 @@ function App() {
 
       {/* RIGHT COLUMN — CPU + Gantt + Metrics */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
+        {/* Completion banner near controls */}
+        {isSimulationComplete && (
+          <div className="p-2 rounded-md bg-emerald-500/10 border border-emerald-700 text-[12px] text-emerald-300">
+            ✅ Simulation complete. Reset to run again or change algorithm.
+          </div>
+        )}
+
         <CPUVisualization currentProcess={currentProcess} isRunning={isRunning} />
         <CompletedProcesses processes={completedProcesses} />
         <ProcessTable 
@@ -358,6 +415,20 @@ function App() {
           isSimulationRunning={isRunning}
           showPriorityColumn={showPriorityColumn}
         />
+        {/* Reschedule message banner (temporary) */}
+        {rescheduleMessage && (
+          <div className="mt-2 p-2 rounded-md bg-yellow-400/10 border border-yellow-600 text-[12px] text-yellow-300">
+            {rescheduleMessage}
+          </div>
+        )}
+
+        {/* Large burst warning (dismissible) */}
+        {largeBurstWarning && (
+          <div className="mt-2 p-2 rounded-md bg-red-500/10 border border-red-600 text-[12px] text-red-400 flex items-center justify-between">
+            <div>{largeBurstWarning}</div>
+            <button onClick={() => setLargeBurstWarning('')} className="ml-3 text-sm text-red-300">Dismiss</button>
+          </div>
+        )}
         <GanttChart ganttBlocks={visibleGanttBlocks} currentTime={simulationTime} />
         <PerformanceMetrics metrics={metrics} />
       </div>
