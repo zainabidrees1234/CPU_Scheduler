@@ -206,22 +206,6 @@ function runPriority(processes: Process[], preemptive: boolean, agingInterval: n
   const n = procs.length;
 
   while (completed < n) {
-    // Apply priority aging if enabled: increment waiting counters and boost
-    if (agingInterval > 0) {
-      procs.forEach(p => {
-        if (p.arrivalTime <= currentTime && p.remainingTime > 0 && p.status !== 'Completed') {
-          const cnt = (agingCounter.get(p.id) || 0) + 1;
-          if (cnt >= agingInterval) {
-            const cur = effectivePriority.get(p.id) || p.priority;
-            effectivePriority.set(p.id, Math.max(1, cur - 1));
-            agingCounter.set(p.id, 0);
-          } else {
-            agingCounter.set(p.id, cnt);
-          }
-        }
-      });
-    }
-
     const available = procs.filter(
       p => p.arrivalTime <= currentTime && p.remainingTime > 0
     );
@@ -243,6 +227,28 @@ function runPriority(processes: Process[], preemptive: boolean, agingInterval: n
       return aPrio - bPrio || a.arrivalTime - b.arrivalTime;
     });
     const current = available[0];
+
+    // Reset selected process aging when it starts/runs.
+    // Apply aging only to other ready/waiting processes.
+    if (agingInterval > 0) {
+      agingCounter.set(current.id, 0);
+      procs.forEach(p => {
+        if (
+          p.arrivalTime <= currentTime &&
+          p.remainingTime > 0 &&
+          p.id !== current.id
+        ) {
+          const cnt = (agingCounter.get(p.id) || 0) + 1;
+          if (cnt >= agingInterval) {
+            const cur = effectivePriority.get(p.id) || p.priority;
+            effectivePriority.set(p.id, Math.max(1, cur - 1));
+            agingCounter.set(p.id, 0);
+          } else {
+            agingCounter.set(p.id, cnt);
+          }
+        }
+      });
+    }
 
     if (current.startTime === null) {
       current.startTime = currentTime;
