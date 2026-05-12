@@ -412,6 +412,7 @@ function runMLFQ(processes: Process[], numQueues: number = 3, quantumsInput: num
   // Create queues array with correct length
   const queues: Process[][] = Array.from({ length: validNumQueues }, () => []);
   const processQueue: Map<string, number> = new Map(); // which queue level each process is in
+  const quantumUsed: Map<string, number> = new Map(); // ticks used in the current queue tenure
   const enqueued = new Set<string>();
 
   const gantt: GanttBlock[] = [];
@@ -459,30 +460,83 @@ function runMLFQ(processes: Process[], numQueues: number = 3, quantumsInput: num
     }
 
     const quantum = QUANTUMS[selectedQueue];
-    const runTime = Math.min(quantum, current.remainingTime);
-    const start = currentTime;
-    currentTime += runTime;
-    current.remainingTime -= runTime;
+    const startQuantumUsed = quantumUsed.get(current.id) || 0;
 
-    if (gantt.length > 0 && gantt[gantt.length - 1].pid === current.pid) {
-      gantt[gantt.length - 1].end = currentTime;
+    if (selectedQueue === 0) {
+      const runTime = Math.min(quantum, current.remainingTime);
+      const start = currentTime;
+      currentTime += runTime;
+      current.remainingTime -= runTime;
+
+      if (gantt.length > 0 && gantt[gantt.length - 1].pid === current.pid) {
+        gantt[gantt.length - 1].end = currentTime;
+      } else {
+        gantt.push({ pid: current.pid, start, end: currentTime, color: current.color });
+      }
+
+      enqueueArrivals(currentTime);
+
+      if (current.remainingTime === 0) {
+        current.completionTime = currentTime;
+        current.turnaroundTime = current.completionTime - current.arrivalTime;
+        current.waitingTime = current.turnaroundTime - current.burstTime;
+        current.status = 'Completed';
+        completed++;
+        quantumUsed.delete(current.id);
+      } else {
+        // Demote to next queue if not already in lowest
+        const nextQueue = Math.min(selectedQueue + 1, validNumQueues - 1);
+        processQueue.set(current.id, nextQueue);
+        quantumUsed.delete(current.id);
+        queues[nextQueue].push(current);
+      }
     } else {
-      gantt.push({ pid: current.pid, start, end: currentTime, color: current.color });
-    }
+      let preemptedByQ0 = false;
+      let used = startQuantumUsed;
 
-    enqueueArrivals(currentTime);
+      while (current.remainingTime > 0 && used < quantum) {
+        const start = currentTime;
+        currentTime += 1;
+        current.remainingTime -= 1;
+        used += 1;
+        quantumUsed.set(current.id, used);
 
-    if (current.remainingTime === 0) {
-      current.completionTime = currentTime;
-      current.turnaroundTime = current.completionTime - current.arrivalTime;
-      current.waitingTime = current.turnaroundTime - current.burstTime;
-      current.status = 'Completed';
-      completed++;
-    } else {
-      // Demote to next queue if not already in lowest
-      const nextQueue = Math.min(selectedQueue + 1, validNumQueues - 1);
-      processQueue.set(current.id, nextQueue);
-      queues[nextQueue].push(current);
+        if (gantt.length > 0 && gantt[gantt.length - 1].pid === current.pid) {
+          gantt[gantt.length - 1].end = currentTime;
+        } else {
+          gantt.push({ pid: current.pid, start, end: currentTime, color: current.color });
+        }
+
+        enqueueArrivals(currentTime);
+
+        if (current.remainingTime === 0) {
+          current.completionTime = currentTime;
+          current.turnaroundTime = current.completionTime - current.arrivalTime;
+          current.waitingTime = current.turnaroundTime - current.burstTime;
+          current.status = 'Completed';
+          completed++;
+          quantumUsed.delete(current.id);
+          break;
+        }
+
+        if (queues[0].length > 0) {
+          preemptedByQ0 = true;
+          break;
+        }
+      }
+
+      if (current.remainingTime > 0 && !preemptedByQ0) {
+        if (used >= quantum) {
+          // Demote to next queue if not already in lowest
+          const nextQueue = Math.min(selectedQueue + 1, validNumQueues - 1);
+          processQueue.set(current.id, nextQueue);
+          quantumUsed.delete(current.id);
+          queues[nextQueue].push(current);
+        }
+      } else if (preemptedByQ0) {
+        processQueue.set(current.id, selectedQueue);
+        queues[selectedQueue].push(current);
+      }
     }
   }
 
