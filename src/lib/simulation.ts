@@ -564,7 +564,6 @@ function runMLFQ(processes: Process[], numQueues: number = 3, quantumsInput: num
     ganttBlocks: gantt,
     metrics,
     updatedProcesses: procs,
-    effectivePriorities: Object.fromEntries(effectivePriority),
   };
 }
 
@@ -629,9 +628,8 @@ export function adaptiveFeedback(
 
   const { avgWaitingTime, avgTurnaroundTime, cpuUtilization, completionOrder } = metrics;
 
-  // Check for starvation: any process waiting much longer than average
-  const readyProcesses = processes.filter(p => p.status === 'Ready' || p.status === 'Waiting');
-  const hasStarvation = readyProcesses.some(p => p.waitingTime > avgWaitingTime * 1.5);
+  // Check for starvation using the final waiting-time data from the simulation.
+  const hasStarvation = processes.some(p => p.waitingTime > avgWaitingTime * 1.5);
 
   // Detect high variance in burst times
   const burstTimes = processes.map(p => p.burstTime);
