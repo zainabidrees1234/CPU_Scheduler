@@ -434,7 +434,6 @@ function runMLFQ(processes: Process[], numQueues: number = 3, quantumsInput: num
 
   // Create queues array with correct length
   const queues: Process[][] = Array.from({ length: validNumQueues }, () => []);
-  const processQueue: Map<string, number> = new Map(); // which queue level each process is in
   const quantumUsed: Map<string, number> = new Map(); // ticks used in the current queue tenure
   const enqueued = new Set<string>();
 
@@ -448,7 +447,6 @@ function runMLFQ(processes: Process[], numQueues: number = 3, quantumsInput: num
       .filter(p => p.arrivalTime <= time && !enqueued.has(p.id) && p.remainingTime > 0)
       .forEach(p => {
         queues[0].push(p);
-        processQueue.set(p.id, 0);
         enqueued.add(p.id);
       });
   }
@@ -509,7 +507,6 @@ function runMLFQ(processes: Process[], numQueues: number = 3, quantumsInput: num
       } else {
         // Demote to next queue if not already in lowest
         const nextQueue = Math.min(selectedQueue + 1, validNumQueues - 1);
-        processQueue.set(current.id, nextQueue);
         quantumUsed.delete(current.id);
         queues[nextQueue].push(current);
       }
@@ -552,12 +549,10 @@ function runMLFQ(processes: Process[], numQueues: number = 3, quantumsInput: num
         if (used >= quantum) {
           // Demote to next queue if not already in lowest
           const nextQueue = Math.min(selectedQueue + 1, validNumQueues - 1);
-          processQueue.set(current.id, nextQueue);
           quantumUsed.delete(current.id);
           queues[nextQueue].push(current);
         }
       } else if (preemptedByQ0) {
-        processQueue.set(current.id, selectedQueue);
         queues[selectedQueue].push(current);
       }
     }

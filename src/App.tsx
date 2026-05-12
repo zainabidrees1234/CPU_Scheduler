@@ -97,6 +97,9 @@ function App() {
           : p
       )
     );
+    if (updatedFields.burstTime > 500) {
+      setLargeBurstWarning('⚠️ Large burst time detected. Set speed to 10 for faster simulation.');
+    }
   }, [isRunning]);
 
   // Compute live animation snapshot from the full gantt and current time
