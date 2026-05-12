@@ -29,6 +29,7 @@ interface SidebarProps {
   agingInterval: number;
   onAgingEnabledChange: (enabled: boolean) => void;
   onAgingIntervalChange: (interval: number) => void;
+  simulationResultProcesses?: Process[];
   showAlgorithmChangeBanner?: boolean;
   onDismissAlgorithmChangeBanner?: () => void;
 }
@@ -68,6 +69,7 @@ export default function Sidebar({
   agingInterval,
   onAgingEnabledChange,
   onAgingIntervalChange,
+  simulationResultProcesses,
   showAlgorithmChangeBanner,
   onDismissAlgorithmChangeBanner,
 }: SidebarProps) {
@@ -90,7 +92,10 @@ export default function Sidebar({
   };
 
   const nextPid = `P${processes.length + 1}`;
-  const feedback = adaptiveFeedback(algorithm, processes, metrics);
+  const feedbackProcesses = simulationResultProcesses && simulationResultProcesses.length > 0
+    ? simulationResultProcesses
+    : processes;
+  const feedback = adaptiveFeedback(algorithm, feedbackProcesses, metrics);
 
   return (
     <div className="w-64 min-w-[256px] h-screen bg-[#0c0c1e] border-r border-[#1a1a30] flex flex-col overflow-y-auto">

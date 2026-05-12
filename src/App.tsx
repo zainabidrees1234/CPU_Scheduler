@@ -44,6 +44,7 @@ function App() {
   const [simulationTime, setSimulationTime] = useState(0);
   const [metrics, setMetrics] = useState<Metrics>(EMPTY_METRICS);
   const [effectivePriorities, setEffectivePriorities] = useState<Record<string, number>>({});
+  const [simulationResultProcesses, setSimulationResultProcesses] = useState<Process[]>([]);
   const [agingEnabled, setAgingEnabled] = useState(false);
   const [agingInterval, setAgingInterval] = useState(5);
   const [showAlgorithmChangeBanner, setShowAlgorithmChangeBanner] = useState(false);
@@ -150,6 +151,7 @@ function App() {
     updatedProcessesRef.current = result.updatedProcesses;
     finalMetricsRef.current = result.metrics;
     setEffectivePriorities(result.effectivePriorities ?? {});
+    setSimulationResultProcesses(result.updatedProcesses);
 
     // Initialize animation state
     setSimulationTime(0);
@@ -178,6 +180,7 @@ function App() {
     updatedProcessesRef.current = result.updatedProcesses;
     finalMetricsRef.current = result.metrics;
     setEffectivePriorities(result.effectivePriorities ?? {});
+    setSimulationResultProcesses(result.updatedProcesses);
     // Reset animation state to restart from beginning
     setSimulationTime(0);
     setIsPaused(false); // Auto-resume
@@ -203,6 +206,7 @@ function App() {
     updatedProcessesRef.current = [];
     setMetrics(EMPTY_METRICS);
     setEffectivePriorities({});
+    setSimulationResultProcesses([]);
     setProcesses([]);
     setAnimProcesses([]);
     setRescheduleMessage('');
@@ -379,6 +383,7 @@ function App() {
         agingInterval={agingInterval}
         onAgingEnabledChange={setAgingEnabled}
         onAgingIntervalChange={setAgingInterval}
+        simulationResultProcesses={simulationResultProcesses}
         showAlgorithmChangeBanner={showAlgorithmChangeBanner}
         onDismissAlgorithmChangeBanner={() => setShowAlgorithmChangeBanner(false)}
       />
