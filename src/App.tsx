@@ -13,19 +13,21 @@ import { PROCESS_COLORS, RAM_MAX_SLOTS } from './types';
 
 let processCounter = 0;
 
+const EMPTY_METRICS: Metrics = {
+  avgWaitingTime: 0,
+  avgTurnaroundTime: 0,
+  cpuUtilization: 0,
+  throughput: 0,
+  avgResponseTime: 0,
+  completionOrder: [],
+};
+
 function App() {
   // Refs to store data that doesn't require re-renders
   const fullScheduleRef = useRef<GanttBlock[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const updatedProcessesRef = useRef<Process[]>([]);
-  const finalMetricsRef = useRef<Metrics>({
-    avgWaitingTime: 0,
-    avgTurnaroundTime: 0,
-    cpuUtilization: 0,
-    throughput: 0,
-    avgResponseTime: 0,
-    completionOrder: [],
-  });
+  const finalMetricsRef = useRef<Metrics>(EMPTY_METRICS);
 
   const [processes, setProcesses] = useState<Process[]>([]);
   const [animProcesses, setAnimProcesses] = useState<Process[]>([]);
@@ -40,14 +42,7 @@ function App() {
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [simulationTime, setSimulationTime] = useState(0);
-  const [metrics, setMetrics] = useState<Metrics>({
-    avgWaitingTime: 0,
-    avgTurnaroundTime: 0,
-    cpuUtilization: 0,
-    throughput: 0,
-    avgResponseTime: 0,
-    completionOrder: [],
-  });
+  const [metrics, setMetrics] = useState<Metrics>(EMPTY_METRICS);
   const [agingEnabled, setAgingEnabled] = useState(false);
   const [agingInterval, setAgingInterval] = useState(5);
   const [showAlgorithmChangeBanner, setShowAlgorithmChangeBanner] = useState(false);
@@ -158,7 +153,7 @@ function App() {
     // Do not replace the canonical `processes` state with final results here.
     // Instead compute initial animation snapshot at time=0.
     setAnimProcesses(computeAnimationState(processes, result.ganttBlocks, 0));
-    setMetrics(result.metrics);
+    setMetrics(EMPTY_METRICS);
   }, [processes, algorithm, timeQuantum, mlfqLevels, mlfqQuantums, agingEnabled, agingInterval]);
 
   const handlePause = useCallback(() => {
@@ -182,7 +177,7 @@ function App() {
     setIsPaused(false); // Auto-resume
     // Do not overwrite canonical `processes`; compute initial animation snapshot
     setAnimProcesses(computeAnimationState(processes, result.ganttBlocks, 0));
-    setMetrics(result.metrics);
+    setMetrics(EMPTY_METRICS);
     setIsSimulationComplete(false);
 
     // show temporary banner
@@ -201,14 +196,7 @@ function App() {
     processCounter = 0;
     fullScheduleRef.current = [];
     updatedProcessesRef.current = [];
-    setMetrics({
-      avgWaitingTime: 0,
-      avgTurnaroundTime: 0,
-      cpuUtilization: 0,
-      throughput: 0,
-      avgResponseTime: 0,
-      completionOrder: [],
-    });
+    setMetrics(EMPTY_METRICS);
     setProcesses([]);
     setAnimProcesses([]);
     setRescheduleMessage('');
