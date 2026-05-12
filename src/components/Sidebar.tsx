@@ -55,10 +55,13 @@ export default function Sidebar({
 
   const activeCount = processes.filter(p => p.status !== 'Completed').length;
   const isRAMFull = activeCount >= RAM_MAX_SLOTS;
+  const isPriorityAlgorithm = algorithm === 'priority-preemptive' || algorithm === 'priority-non-preemptive';
 
   const handleAdd = () => {
     if (burstTime <= 0 || isRAMFull) return;
-    onAddProcess(arrivalTime, burstTime, priority);
+    // Use priority value only for priority algorithms; otherwise use default 0
+    const effectivePriority = isPriorityAlgorithm ? priority : 0;
+    onAddProcess(arrivalTime, burstTime, effectivePriority);
     setArrivalTime(0);
     setBurstTime(1);
     setPriority(1);
@@ -109,16 +112,18 @@ export default function Sidebar({
               className="input-field py-1.5"
             />
           </div>
-          <div>
-            <label className="text-[10px] text-[#4a4a65] mb-0.5 block">Priority</label>
-            <input
-              type="number"
-              min={1}
-              value={priority}
-              onChange={e => setPriority(Math.max(1, parseInt(e.target.value) || 1))}
-              className="input-field py-1.5"
-            />
-          </div>
+          {isPriorityAlgorithm && (
+            <div>
+              <label className="text-[10px] text-[#4a4a65] mb-0.5 block">Priority</label>
+              <input
+                type="number"
+                min={1}
+                value={priority}
+                onChange={e => setPriority(Math.max(1, parseInt(e.target.value) || 1))}
+                className="input-field py-1.5"
+              />
+            </div>
+          )}
           <button
             onClick={handleAdd}
             disabled={isRAMFull}

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import RAMVisualization from './components/RAMVisualization';
 import ReadyQueue from './components/ReadyQueue';
@@ -13,13 +13,26 @@ import { PROCESS_COLORS, RAM_MAX_SLOTS } from './types';
 let processCounter = 0;
 
 function App() {
+  // Refs to store data that doesn't require re-renders
+  const fullScheduleRef = useRef<GanttBlock[]>([]);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const updatedProcessesRef = useRef<Process[]>([]);
+  const finalMetricsRef = useRef<Metrics>({
+    avgWaitingTime: 0,
+    avgTurnaroundTime: 0,
+    cpuUtilization: 0,
+    throughput: 0,
+    avgResponseTime: 0,
+    completionOrder: [],
+  });
+
   const [processes, setProcesses] = useState<Process[]>([]);
   const [algorithm, setAlgorithm] = useState<SchedulingAlgorithm>('fcfs');
   const [timeQuantum, setTimeQuantum] = useState(2);
   const [speed, setSpeed] = useState(5);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [ganttBlocks, setGanttBlocks] = useState<GanttBlock[]>([]);
+  const [simulationTime, setSimulationTime] = useState(0);
   const [metrics, setMetrics] = useState<Metrics>({
     avgWaitingTime: 0,
     avgTurnaroundTime: 0,
@@ -60,16 +73,19 @@ function App() {
 
   const handleStart = useCallback(() => {
     if (processes.length === 0) return;
+
+    // Run simulation — compute full schedule upfront
+    const result = startSimulation(processes, algorithm, timeQuantum);
+    fullScheduleRef.current = result.ganttBlocks;
+    updatedProcessesRef.current = result.updatedProcesses;
+    finalMetricsRef.current = result.metrics;
+
+    // Initialize animation state
+    setSimulationTime(0);
     setIsRunning(true);
     setIsPaused(false);
-
-    // Run simulation — get back updated processes with all metrics computed
-    const result = startSimulation(processes, algorithm, timeQuantum);
-    setGanttBlocks(result.ganttBlocks);
-    setMetrics(result.metrics);
-
-    // Update processes with computed waiting times, turnaround, etc.
     setProcesses(result.updatedProcesses);
+    setMetrics(result.metrics);
   }, [processes, algorithm, timeQuantum]);
 
   const handlePause = useCallback(() => {
@@ -81,10 +97,16 @@ function App() {
   }, []);
 
   const handleReset = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
     setIsRunning(false);
     setIsPaused(false);
+    setSimulationTime(0);
     processCounter = 0;
-    setGanttBlocks([]);
+    fullScheduleRef.current = [];
+    updatedProcessesRef.current = [];
     setMetrics({
       avgWaitingTime: 0,
       avgTurnaroundTime: 0,
@@ -96,10 +118,77 @@ function App() {
     setProcesses([]);
   }, []);
 
-  // Show the last running or first ready process in CPU display
+  // ─────────────────────────────────────────────
+  // ANIMATION LOOP: Tick simulation based on speed
+  // ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!isRunning) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
+    }
+
+    // Calculate delay: speed 1 = 1000ms, speed 10 = 100ms
+    const delayMs = (11 - speed) * 100;
+
+    intervalRef.current = setInterval(() => {
+      setSimulationTime(prev => {
+        // Find max time in schedule to know when to stop
+        const maxTime =
+          fullScheduleRef.current.length > 0
+            ? Math.max(...fullScheduleRef.current.map(b => b.end))
+            : 0;
+
+        // Stop if we've reached the end
+        if (prev >= maxTime) {
+          setIsRunning(false);
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
+          return prev;
+        }
+
+        // Only increment if not paused
+        if (!isPaused) {
+          return prev + 1;
+        }
+        return prev;
+      });
+    }, delayMs);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [isRunning, speed, isPaused]);
+
+  // ─────────────────────────────────────────────
+  // DERIVE ANIMATION STATE FROM simulationTime
+  // ─────────────────────────────────────────────
+
+  // Gantt blocks that have started (revealed) at current time
+  const visibleGanttBlocks = fullScheduleRef.current.filter(
+    block => block.end <= simulationTime
+  );
+
+  // Current process running at this moment
+  const currentGanttBlock = fullScheduleRef.current.find(
+    block => block.start <= simulationTime && simulationTime < block.end
+  );
   const currentProcess =
-    processes.find(p => p.status === 'Running') ||
-    (isRunning ? processes.find(p => p.status === 'Completed') || null : null);
+    currentGanttBlock && currentGanttBlock.pid !== 'IDLE'
+      ? processes.find(p => p.pid === currentGanttBlock.pid)
+      : null;
+
+  // Processes completed by current time
+  const completedProcesses = processes.filter(
+    p => p.completionTime !== null && p.completionTime <= simulationTime
+  );
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#0a0a1a]">
@@ -145,8 +234,8 @@ function App() {
       {/* RIGHT COLUMN — CPU + Gantt + Metrics */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         <CPUVisualization currentProcess={currentProcess} isRunning={isRunning} />
-        <CompletedProcesses processes={processes} />
-        <GanttChart ganttBlocks={ganttBlocks} />
+        <CompletedProcesses processes={completedProcesses} />
+        <GanttChart ganttBlocks={visibleGanttBlocks} />
         <PerformanceMetrics metrics={metrics} />
       </div>
     </div>
