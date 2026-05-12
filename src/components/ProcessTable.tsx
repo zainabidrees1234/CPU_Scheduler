@@ -7,9 +7,10 @@ interface ProcessTableProps {
   onRemoveProcess: (id: string) => void;
   onEditProcess: (id: string, updatedFields: { arrivalTime: number; burstTime: number; priority: number }) => void;
   isSimulationRunning: boolean;
+  showPriorityColumn?: boolean;
 }
 
-export default function ProcessTable({ processes, onRemoveProcess, onEditProcess, isSimulationRunning }: ProcessTableProps) {
+export default function ProcessTable({ processes, onRemoveProcess, onEditProcess, isSimulationRunning, showPriorityColumn = true }: ProcessTableProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<{ arrivalTime: number; burstTime: number; priority: number } | null>(null);
   const [editError, setEditError] = useState<string>('');
@@ -85,7 +86,9 @@ export default function ProcessTable({ processes, onRemoveProcess, onEditProcess
                 <th className="px-5 py-3 text-left font-medium">PID</th>
                 <th className="px-5 py-3 text-left font-medium">Arrival Time</th>
                 <th className="px-5 py-3 text-left font-medium">Burst Time</th>
-                <th className="px-5 py-3 text-left font-medium">Priority</th>
+                {showPriorityColumn && (
+                  <th className="px-5 py-3 text-left font-medium">Priority</th>
+                )}
                 <th className="px-5 py-3 text-left font-medium">Status</th>
                 <th className="px-5 py-3 text-right font-medium">Actions</th>
               </tr>
@@ -119,21 +122,25 @@ export default function ProcessTable({ processes, onRemoveProcess, onEditProcess
                           className="input-field py-1 text-xs w-16"
                         />
                       </td>
-                      <td className="px-5 py-3">
-                        <input
-                          type="number"
-                          min={1}
-                          value={editValues.priority}
-                          onChange={e => setEditValues({ ...editValues, priority: Math.max(1, parseInt(e.target.value) || 1) })}
-                          className="input-field py-1 text-xs w-16"
-                        />
-                      </td>
+                      {showPriorityColumn && (
+                        <td className="px-5 py-3">
+                          <input
+                            type="number"
+                            min={1}
+                            value={editValues.priority}
+                            onChange={e => setEditValues({ ...editValues, priority: Math.max(1, parseInt(e.target.value) || 1) })}
+                            className="input-field py-1 text-xs w-16"
+                          />
+                        </td>
+                      )}
                     </>
                   ) : (
                     <>
                       <td className="px-5 py-3 text-[#b0b0c0]">{process.arrivalTime}</td>
                       <td className="px-5 py-3 text-[#b0b0c0]">{process.burstTime}</td>
-                      <td className="px-5 py-3 text-[#b0b0c0]">{process.priority}</td>
+                      {showPriorityColumn && (
+                        <td className="px-5 py-3 text-[#b0b0c0]">{process.priority}</td>
+                      )}
                     </>
                   )}
                   <td className="px-5 py-3">

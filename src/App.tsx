@@ -293,6 +293,8 @@ function App() {
   // Processes completed by current time (from animation snapshot)
   const completedProcesses = animProcesses.filter(p => p.status === 'Completed');
 
+  const showPriorityColumn = algorithm === 'priority-preemptive' || algorithm === 'priority-non-preemptive';
+
   return (
     <div className="flex h-screen overflow-hidden bg-[#0a0a1a]">
       {/* LEFT COLUMN — Controls */}
@@ -354,6 +356,7 @@ function App() {
           onRemoveProcess={handleRemoveProcess}
           onEditProcess={handleEditProcess}
           isSimulationRunning={isRunning}
+          showPriorityColumn={showPriorityColumn}
         />
         <GanttChart ganttBlocks={visibleGanttBlocks} currentTime={simulationTime} />
         <PerformanceMetrics metrics={metrics} />
