@@ -339,6 +339,18 @@ function App() {
 
   const showPriorityColumn = algorithm === 'priority-preemptive' || algorithm === 'priority-non-preemptive';
 
+  // Compute display processes: when paused, merge new processes into animation snapshot
+  const displayProcesses = isPaused && isRunning
+    ? [
+        ...animProcesses,
+        ...processes.filter(p =>
+          !animProcesses.some(a => a.id === p.id)
+        ),
+      ]
+    : isRunning
+      ? animProcesses
+      : processes;
+
   return (
     <div className="flex h-screen overflow-hidden bg-[#0a0a1a]">
       {/* LEFT COLUMN — Controls */}
@@ -375,7 +387,7 @@ function App() {
       <div className="w-64 min-w-[256px] h-screen border-r border-[#1a1a30] flex flex-col p-3 gap-3">
         {/* RAM — takes remaining space, scrollable */}
         <div className="flex-1 min-h-0">
-          <RAMVisualization processes={animProcesses} />
+          <RAMVisualization processes={displayProcesses} />
         </div>
 
         {/* Flow indicator */}
@@ -387,7 +399,7 @@ function App() {
 
         {/* Ready Queue — fixed at bottom */}
         <div className="flex-shrink-0">
-          <ReadyQueue processes={isRunning ? animProcesses : processes} />
+          <ReadyQueue processes={displayProcesses} />
         </div>
       </div>
 
