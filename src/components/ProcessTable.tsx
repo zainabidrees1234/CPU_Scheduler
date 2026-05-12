@@ -8,9 +8,19 @@ interface ProcessTableProps {
   onEditProcess: (id: string, updatedFields: { arrivalTime: number; burstTime: number; priority: number }) => void;
   isSimulationRunning: boolean;
   showPriorityColumn?: boolean;
+  showEffectivePriorityColumn?: boolean;
+  effectivePriorities?: Record<string, number>;
 }
 
-export default function ProcessTable({ processes, onRemoveProcess, onEditProcess, isSimulationRunning, showPriorityColumn = true }: ProcessTableProps) {
+export default function ProcessTable({
+  processes,
+  onRemoveProcess,
+  onEditProcess,
+  isSimulationRunning,
+  showPriorityColumn = true,
+  showEffectivePriorityColumn = false,
+  effectivePriorities = {},
+}: ProcessTableProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<{ arrivalTime: number; burstTime: number; priority: number } | null>(null);
   const [editError, setEditError] = useState<string>('');
@@ -94,6 +104,9 @@ export default function ProcessTable({ processes, onRemoveProcess, onEditProcess
                 {showPriorityColumn && (
                   <th className="px-5 py-3 text-left font-medium">Priority</th>
                 )}
+                {showEffectivePriorityColumn && (
+                  <th className="px-5 py-3 text-left font-medium">Eff. Priority</th>
+                )}
                 <th className="px-5 py-3 text-left font-medium">Status</th>
                 <th className="px-5 py-3 text-right font-medium">Actions</th>
               </tr>
@@ -138,6 +151,11 @@ export default function ProcessTable({ processes, onRemoveProcess, onEditProcess
                           />
                         </td>
                       )}
+                      {showEffectivePriorityColumn && (
+                        <td className="px-5 py-3 text-[#00d4ff] font-semibold">
+                          {effectivePriorities[process.id] ?? process.priority}
+                        </td>
+                      )}
                     </>
                   ) : (
                     <>
@@ -145,6 +163,11 @@ export default function ProcessTable({ processes, onRemoveProcess, onEditProcess
                       <td className="px-5 py-3 text-[#b0b0c0]">{process.burstTime}</td>
                       {showPriorityColumn && (
                         <td className="px-5 py-3 text-[#b0b0c0]">{process.priority}</td>
+                      )}
+                      {showEffectivePriorityColumn && (
+                        <td className="px-5 py-3 text-[#00d4ff] font-semibold">
+                          {effectivePriorities[process.id] ?? process.priority}
+                        </td>
                       )}
                     </>
                   )}

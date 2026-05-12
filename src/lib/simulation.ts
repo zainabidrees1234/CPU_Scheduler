@@ -9,6 +9,7 @@ export interface SimulationResult {
   ganttBlocks: GanttBlock[];
   metrics: PerformanceMetrics;
   updatedProcesses: Process[];
+  effectivePriorities?: Record<string, number>;
 }
 
 // ─────────────────────────────────────────────
@@ -559,7 +560,12 @@ function runMLFQ(processes: Process[], numQueues: number = 3, quantumsInput: num
   }
 
   const metrics = computeMetrics(procs, gantt, currentTime);
-  return { ganttBlocks: gantt, metrics, updatedProcesses: procs };
+  return {
+    ganttBlocks: gantt,
+    metrics,
+    updatedProcesses: procs,
+    effectivePriorities: Object.fromEntries(effectivePriority),
+  };
 }
 
 // ─────────────────────────────────────────────

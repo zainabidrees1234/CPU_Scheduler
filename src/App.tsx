@@ -43,6 +43,7 @@ function App() {
   const [isPaused, setIsPaused] = useState(false);
   const [simulationTime, setSimulationTime] = useState(0);
   const [metrics, setMetrics] = useState<Metrics>(EMPTY_METRICS);
+  const [effectivePriorities, setEffectivePriorities] = useState<Record<string, number>>({});
   const [agingEnabled, setAgingEnabled] = useState(false);
   const [agingInterval, setAgingInterval] = useState(5);
   const [showAlgorithmChangeBanner, setShowAlgorithmChangeBanner] = useState(false);
@@ -148,6 +149,7 @@ function App() {
     fullScheduleRef.current = result.ganttBlocks;
     updatedProcessesRef.current = result.updatedProcesses;
     finalMetricsRef.current = result.metrics;
+    setEffectivePriorities(result.effectivePriorities ?? {});
 
     // Initialize animation state
     setSimulationTime(0);
@@ -175,6 +177,7 @@ function App() {
     fullScheduleRef.current = result.ganttBlocks;
     updatedProcessesRef.current = result.updatedProcesses;
     finalMetricsRef.current = result.metrics;
+    setEffectivePriorities(result.effectivePriorities ?? {});
     // Reset animation state to restart from beginning
     setSimulationTime(0);
     setIsPaused(false); // Auto-resume
@@ -195,11 +198,11 @@ function App() {
     }
     setIsRunning(false);
     setIsPaused(false);
-    setSimulationTime(0);
     processCounter = 0;
     fullScheduleRef.current = [];
     updatedProcessesRef.current = [];
     setMetrics(EMPTY_METRICS);
+    setEffectivePriorities({});
     setProcesses([]);
     setAnimProcesses([]);
     setRescheduleMessage('');
@@ -405,6 +408,8 @@ function App() {
           onEditProcess={handleEditProcess}
           isSimulationRunning={isRunning}
           showPriorityColumn={showPriorityColumn}
+          effectivePriorities={effectivePriorities}
+          showEffectivePriorityColumn={showPriorityColumn && agingEnabled}
         />
         {/* Reschedule message banner (temporary) */}
         {rescheduleMessage && (
