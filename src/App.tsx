@@ -44,6 +44,8 @@ function App() {
     avgResponseTime: 0,
     completionOrder: [],
   });
+  const [agingEnabled, setAgingEnabled] = useState(false);
+  const [agingInterval, setAgingInterval] = useState(5);
 
   const handleAddProcess = useCallback((arrivalTime: number, burstTime: number, priority: number) => {
     const activeCount = processes.filter(p => p.status !== 'Completed').length;
@@ -97,7 +99,7 @@ function App() {
     if (processes.length === 0) return;
 
     // Run simulation — compute full schedule upfront
-    const result = startSimulation(processes, algorithm, timeQuantum, mlfqLevels, mlfqQuantums);
+    const result = startSimulation(processes, algorithm, timeQuantum, mlfqLevels, mlfqQuantums, agingEnabled ? agingInterval : 0);
     fullScheduleRef.current = result.ganttBlocks;
     updatedProcessesRef.current = result.updatedProcesses;
     finalMetricsRef.current = result.metrics;
@@ -108,7 +110,7 @@ function App() {
     setIsPaused(false);
     setProcesses(result.updatedProcesses);
     setMetrics(result.metrics);
-  }, [processes, algorithm, timeQuantum, mlfqLevels, mlfqQuantums]);
+  }, [processes, algorithm, timeQuantum, mlfqLevels, mlfqQuantums, agingEnabled, agingInterval]);
 
   const handlePause = useCallback(() => {
     setIsPaused(true);
@@ -122,7 +124,7 @@ function App() {
     if (processes.length === 0) return;
 
     // Re-run simulation with all processes (original + newly added)
-    const result = startSimulation(processes, algorithm, timeQuantum, mlfqLevels, mlfqQuantums);
+    const result = startSimulation(processes, algorithm, timeQuantum, mlfqLevels, mlfqQuantums, agingEnabled ? agingInterval : 0);
     fullScheduleRef.current = result.ganttBlocks;
     updatedProcessesRef.current = result.updatedProcesses;
     finalMetricsRef.current = result.metrics;
@@ -132,7 +134,7 @@ function App() {
     setIsPaused(false); // Auto-resume
     setProcesses(result.updatedProcesses);
     setMetrics(result.metrics);
-  }, [processes, algorithm, timeQuantum, mlfqLevels, mlfqQuantums]);
+  }, [processes, algorithm, timeQuantum, mlfqLevels, mlfqQuantums, agingEnabled, agingInterval]);
 
   const handleReset = useCallback(() => {
     if (intervalRef.current) {
@@ -252,6 +254,10 @@ function App() {
         onReschedule={handleReschedule}
         onReset={handleReset}
         metrics={metrics}
+        agingEnabled={agingEnabled}
+        agingInterval={agingInterval}
+        onAgingEnabledChange={setAgingEnabled}
+        onAgingIntervalChange={setAgingInterval}
       />
 
       {/* MIDDLE COLUMN — RAM + Ready Queue */}

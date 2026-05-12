@@ -25,6 +25,10 @@ interface SidebarProps {
   onReschedule: () => void;
   onReset: () => void;
   metrics: PerformanceMetrics;
+  agingEnabled: boolean;
+  agingInterval: number;
+  onAgingEnabledChange: (enabled: boolean) => void;
+  onAgingIntervalChange: (interval: number) => void;
 }
 
 const ALGORITHM_OPTIONS: { value: SchedulingAlgorithm; label: string }[] = [
@@ -58,6 +62,10 @@ export default function Sidebar({
   onReschedule,
   onReset,
   metrics,
+  agingEnabled,
+  agingInterval,
+  onAgingEnabledChange,
+  onAgingIntervalChange,
 }: SidebarProps) {
   const [arrivalTime, setArrivalTime] = useState(0);
   const [burstTime, setBurstTime] = useState(1);
@@ -234,6 +242,31 @@ export default function Sidebar({
                   ∞
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+        {isPriorityAlgorithm && (
+          <div className="mt-2">
+            <label className="text-[10px] text-[#4a4a65] mb-0.5 block">Priority Aging</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={agingEnabled}
+                onChange={e => onAgingEnabledChange(e.target.checked)}
+                className="accent-[#00d4ff]"
+              />
+              <span className="text-[11px] text-[#8a8aa0]">Enable aging (prevent starvation)</span>
+            </div>
+            <div className="mt-2">
+              <label className="text-[10px] text-[#4a4a65] mb-0.5 block">Boost every (time units)</label>
+              <input
+                type="number"
+                min={1}
+                value={agingInterval}
+                onChange={e => onAgingIntervalChange(Math.max(1, parseInt(e.target.value) || 1))}
+                disabled={!agingEnabled}
+                className="input-field py-1.5"
+              />
             </div>
           </div>
         )}

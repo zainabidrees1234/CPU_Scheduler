@@ -188,9 +188,17 @@ function runSJF(processes: Process[], preemptive: boolean): SimulationResult {
 // ALGORITHM 4 & 5: Priority — Non-Preemptive & Preemptive
 // Lower number = higher priority
 // ─────────────────────────────────────────────
-function runPriority(processes: Process[], preemptive: boolean): SimulationResult {
+function runPriority(processes: Process[], preemptive: boolean, agingInterval: number = 0): SimulationResult {
   const procs = cloneProcesses(processes);
   procs.forEach(p => { p.remainingTime = p.burstTime; });
+
+  // Track effective priorities separately so we don't mutate original objects
+  const effectivePriority = new Map<string, number>();
+  procs.forEach(p => { effectivePriority.set(p.id, p.priority); });
+
+  // Aging counters accumulate time while a process is waiting
+  const agingCounter = new Map<string, number>();
+  procs.forEach(p => { agingCounter.set(p.id, 0); });
 
   const gantt: GanttBlock[] = [];
   let currentTime = 0;
@@ -198,6 +206,22 @@ function runPriority(processes: Process[], preemptive: boolean): SimulationResul
   const n = procs.length;
 
   while (completed < n) {
+    // Apply priority aging if enabled: increment waiting counters and boost
+    if (agingInterval > 0) {
+      procs.forEach(p => {
+        if (p.arrivalTime <= currentTime && p.remainingTime > 0 && p.status !== 'Completed') {
+          const cnt = (agingCounter.get(p.id) || 0) + 1;
+          if (cnt >= agingInterval) {
+            const cur = effectivePriority.get(p.id) || p.priority;
+            effectivePriority.set(p.id, Math.max(1, cur - 1));
+            agingCounter.set(p.id, 0);
+          } else {
+            agingCounter.set(p.id, cnt);
+          }
+        }
+      });
+    }
+
     const available = procs.filter(
       p => p.arrivalTime <= currentTime && p.remainingTime > 0
     );
@@ -212,8 +236,12 @@ function runPriority(processes: Process[], preemptive: boolean): SimulationResul
       continue;
     }
 
-    // Pick highest priority (lowest number), break ties by arrival time
-    available.sort((a, b) => a.priority - b.priority || a.arrivalTime - b.arrivalTime);
+    // Pick highest priority (lowest number) using effective priorities, break ties by arrival time
+    available.sort((a, b) => {
+      const aPrio = effectivePriority.get(a.id) || a.priority;
+      const bPrio = effectivePriority.get(b.id) || b.priority;
+      return aPrio - bPrio || a.arrivalTime - b.arrivalTime;
+    });
     const current = available[0];
 
     if (current.startTime === null) {
@@ -453,7 +481,8 @@ export function startSimulation(
   algorithm: SchedulingAlgorithm,
   timeQuantum: number = 2,
   mlfqLevels: number = 3,
-  mlfqQuantums: number[] = [2, 4]
+  mlfqQuantums: number[] = [2, 4],
+  agingInterval: number = 0
 ): SimulationResult {
   if (processes.length === 0) {
     return {
@@ -478,9 +507,9 @@ export function startSimulation(
     case 'sjf-preemptive':
       return runSJF(processes, true);
     case 'priority-non-preemptive':
-      return runPriority(processes, false);
+      return runPriority(processes, false, agingInterval);
     case 'priority-preemptive':
-      return runPriority(processes, true);
+      return runPriority(processes, true, agingInterval);
     case 'round-robin':
       return runRoundRobin(processes, timeQuantum);
     case 'mlfq':
