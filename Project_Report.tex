@@ -1,0 +1,473 @@
+\documentclass[12pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{enumitem}
+
+\begin{document}
+
+
+\begin{titlepage}
+    \centering
+
+    % University Logo
+    \includegraphics[width=4cm]{logo.png}
+
+    \vspace{1cm}
+
+    {\large \textbf{Bahria University, Islamabad}\par}
+
+    \vspace{0.5cm}
+
+    {\normalsize Department of Computer Science\par}
+
+    \vspace{1cm}
+
+    {\normalsize \textbf{Operating Systems -- CSL 320}\par}
+
+    \vspace{1.8cm}
+
+    % Main Project Title
+    {\Huge \bfseries
+    Real-Time Interactive CPU Scheduling Simulator with Adaptive Feedback\par}
+
+    \vspace{1cm}
+
+    {\Large \textbf{Project Report}\par}
+
+    \vfill
+
+    \begin{center}
+        \small
+        \textbf{Submitted By} \\[0.5cm]
+
+        Umm-e-Habiba Imran \\
+        01-134241-048 \\[0.7cm]
+
+        Zainab Idrees \\
+        01-134241-051
+    \end{center}
+
+    \vfill
+
+    \small
+    \textbf{Submitted To} \\[0.2cm]
+    Sabira Feroz
+
+    \vspace{0.8cm}
+
+    \today
+
+\end{titlepage}
+
+\section*{Abstract}
+This project presents a Real-Time Interactive CPU Scheduling Simulator built as a web-based graphical application. The simulator models the behavior of classical operating system scheduling algorithms and visualizes their decisions in real time. It includes FCFS, SJF in both preemptive and non-preemptive modes, Priority Scheduling in both modes, Round Robin, and Multilevel Feedback Queue scheduling.
+
+The application is not just a static visualizer. It supports dynamic process addition, process editing before execution, pause and resume control, runtime configuration of scheduling parameters, adaptive feedback, and algorithm switching after a run. These features make it suitable for teaching, analysis, and demonstration during a viva.
+
+\section*{Introduction}
+CPU scheduling is one of the central responsibilities of an operating system. When several processes are ready to run, the scheduler must decide which process gets the CPU next, how long it should run, and whether it should be interrupted by a more suitable process. Different algorithms solve this problem in different ways, and each one creates a different balance between fairness, responsiveness, throughput, and waiting time.
+
+This project was designed to make those trade-offs visible. Instead of only giving theoretical definitions, the simulator shows actual scheduling behavior using a live Gantt chart, ready queue, CPU panel, RAM view, completed process summary, and performance metrics. The user can also alter the workload while the simulation is paused and observe how the scheduling output changes after rescheduling.
+
+The result is a practical educational tool that demonstrates how scheduling policies behave on real process sets.
+
+\tableofcontents
+\newpage
+
+\section{Project Overview}
+This project implements a Real-Time Interactive CPU Scheduling Simulator that models, compares, and visualizes multiple scheduling algorithms in a GUI-based environment. The simulator supports dynamic process management, live scheduling visualization, adaptive feedback, and algorithm switching during execution.
+
+The project qualifies as a Complex Computing Problem because it requires:
+\begin{itemize}[leftmargin=*]
+    \item Deep understanding of CPU scheduling algorithms and their trade-offs.
+    \item Real-time interaction with changing process states.
+    \item Adaptive decision making based on workload characteristics.
+    \item Performance analysis using standard operating system metrics.
+    \item A complete graphical user interface rather than a console-only design.
+\end{itemize}
+
+The application provides a clean, graphical visualization environment. The scheduling engine is designed to separate core operating system logic from the presentation layer, allowing independent verification of scheduling correctness.
+
+\section{Problem Statement}
+The objective is to design and implement an Interactive Scheduling Simulator with Adaptive Feedback that:
+\begin{itemize}[leftmargin=*]
+    \item Simulates multiple CPU scheduling algorithms.
+    \item Allows dynamic addition, editing, and removal of processes.
+    \item Visualizes scheduling decisions in real time.
+    \item Calculates performance metrics for comparison.
+    \item Adapts feedback based on workload and starvation conditions.
+    \item Allows switching between algorithms during execution.
+\end{itemize}
+
+The central challenge is that these requirements interact with one another. For example, a simulator that allows runtime process changes must carefully manage the difference between the original process list, the computed final schedule, and the live animation snapshot. A feedback engine must use actual metric values rather than rough guesses. A scheduling visualizer must still feel live, even when the schedule is computed up front for accuracy.
+
+\section{Problem Analysis}
+From an operating-systems perspective, the project addresses several classic scheduling concerns:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Fairness}: every process should eventually receive CPU time.
+    \item \textbf{Responsiveness}: short or interactive jobs should not wait too long.
+    \item \textbf{Throughput}: the system should complete as much work as possible per unit time.
+    \item \textbf{Starvation control}: low-priority or long processes should not be postponed indefinitely.
+    \item \textbf{Visualization}: scheduling behavior should be easy to understand and explain.
+\end{itemize}
+
+Each algorithm has a different strength:
+\begin{itemize}[leftmargin=*]
+    \item FCFS is simple and intuitive but can suffer from the convoy effect.
+    \item SJF reduces average waiting time but can disadvantage long jobs.
+    \item Priority scheduling reflects process importance but may cause starvation.
+    \item Round Robin improves fairness and responsiveness but may increase fragmentation.
+    \item MLFQ attempts to balance responsiveness and fairness by using multiple queues.
+\end{itemize}
+
+The simulator was built to expose these trade-offs clearly.
+
+\section{Scheduling Algorithms Implemented}
+The simulator supports the following algorithms:
+\begin{enumerate}[leftmargin=*]
+    \item First-Come, First-Served (FCFS)
+    \item Shortest Job First (SJF) Non-Preemptive
+    \item Shortest Remaining Time First (SRTF / SJF Preemptive)
+    \item Priority Scheduling Non-Preemptive
+    \item Priority Scheduling Preemptive
+    \item Round Robin (RR)
+    \item Multilevel Feedback Queue (MLFQ)
+\end{enumerate}
+
+Each algorithm is implemented as its own execution path in the simulation engine. This makes the behavior easier to verify, easier to explain, and easier to extend later.
+
+\section{Functional Requirements and How the System Meets Them}
+\subsection{Dynamic Process Management}
+The simulator supports adding new processes before execution and, when paused, during simulation. It also supports modifying burst time, arrival time, and priority before the simulation starts. Processes can be removed from the list while the simulation is not running.
+
+The process table blocks editing and deletion once the simulation begins. This preserves the correctness of the computed schedule and prevents the user from changing the workload mid-run without recalculation.
+
+\subsection{Runtime Parameter Adjustment}
+The simulator allows the user to adjust:
+\begin{itemize}[leftmargin=*]
+    \item The Round Robin time quantum.
+    \item Priority aging for priority algorithms.
+    \item Queue levels and quantums for MLFQ.
+    \item Pause, resume, reschedule, and reset actions.
+\end{itemize}
+
+These controls only appear when relevant. For example, the time quantum input appears only for Round Robin, aging controls appear only for priority scheduling, and MLFQ configuration appears only for MLFQ.
+
+\subsection{Real-Time Visualization}
+The system provides live visualization through:
+\begin{itemize}[leftmargin=*]
+    \item A Gantt chart showing execution history.
+    \item A CPU panel showing the current process.
+    \item A ready queue panel showing waiting processes.
+    \item A RAM panel showing processes currently in memory.
+    \item A completed-process summary.
+    \item A performance metrics section.
+\end{itemize}
+
+When the simulation is paused and a new process is added, the new process appears immediately in the RAM and ready queue views.
+
+\subsection{Adaptive Feedback Mechanism}
+The simulator includes a feedback engine that examines the workload and current metrics. It recommends better algorithms when the workload suggests convoy effect, starvation risk, high burst-time variance, or a large number of processes.
+
+This feedback is useful because it tells the user not only what happened, but also why a different algorithm may be better.
+
+\section{System Design}
+\subsection{Architecture}
+The system is built using a modular architecture divided into two main components:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Simulation Engine}: Responsible for calculating scheduling sequences, computing performance metrics, and generating adaptive feedback based on workload characteristics.
+    \item \textbf{Presentation Layer}: Manages the dynamic rendering of the Gantt chart, ready queue, CPU state, and performance metrics in real time.
+\end{itemize}
+
+This separation ensures that the core scheduling algorithms remain mathematically verifiable and completely independent of the visual components.
+
+\subsection{Core Data Structures}
+\begin{longtable}{>{\raggedright\arraybackslash}p{0.25\textwidth} >{\raggedright\arraybackslash}p{0.65\textwidth}}
+\toprule
+\textbf{Data Structure} & \textbf{Purpose} \\
+\midrule
+Process & Stores PID, arrival time, burst time, priority, remaining time, status, and computed metrics. \\
+GanttBlock & Represents a CPU execution interval, including IDLE segments. \\
+PerformanceMetrics & Stores average waiting time, turnaround time, utilization, throughput, response time, and completion order. \\
+RAMSlot & Models process placement in the RAM visualization. \\
+CPUState & Represents the current CPU execution state. \\
+\bottomrule
+\end{longtable}
+
+The Process structure is especially important because it stores both the original input values and the values computed by the scheduler. That makes it possible to show the user the raw inputs and the final results side by side.
+
+\subsection{Execution Flow}
+\begin{enumerate}[leftmargin=*]
+    \item The user enters processes and chooses an algorithm.
+    \item The simulator computes the full schedule for the selected workload.
+    \item The UI animates that schedule step by step.
+    \item Metrics are updated progressively as the simulation runs.
+    \item Adaptive feedback is generated from the computed workload properties.
+    \item The user may pause, resume, reschedule, reset, or switch algorithms.
+\end{enumerate}
+
+The design intentionally separates schedule generation from animation so that the UI can remain smooth while still producing correct final output.
+
+\section{Implementation Details}
+\subsection{Simulation Engine}
+The simulation engine is implemented in \texttt{src/lib/simulation.ts}. It contains dedicated functions for each scheduling algorithm and returns three main outputs:
+\begin{itemize}[leftmargin=*]
+    \item The Gantt blocks for the full schedule.
+    \item The updated process list with waiting, turnaround, completion, and response times.
+    \item The performance metrics for the run.
+\end{itemize}
+
+For priority scheduling, the engine also returns effective priorities so that the UI can show the current boosted values when aging is enabled.
+
+\subsection{FCFS}
+FCFS sorts processes by arrival time and executes them in that order. If there is a gap before the next process arrives, the simulator inserts an IDLE block in the Gantt chart.
+
+This algorithm is the simplest baseline and is useful for demonstration because its behavior is easy to trace by hand.
+
+\subsection{SJF and SRTF}
+SJF Non-Preemptive chooses the shortest available process and runs it to completion. SRTF recalculates the shortest remaining time at each tick and may interrupt the current process if a shorter process arrives.
+
+These two algorithms show the difference between waiting for completion and allowing preemption. SRTF typically improves response to short jobs, while non-preemptive SJF is simpler and less fragmented.
+
+\subsection{Priority Scheduling}
+Priority scheduling uses lower numeric values as higher priority. The simulator supports both preemptive and non-preemptive modes.
+
+The project also includes priority aging. Aging gradually improves the effective priority of processes that have waited for a long time. This reduces starvation and is reflected in the user interface through the optional effective-priority column.
+
+\subsection{Round Robin}
+Round Robin runs each process for a fixed quantum, then re-queues it if it still has remaining time. The implementation carefully re-enqueues the current process before admitting newly arrived processes at the same time boundary, which preserves the intended queue fairness.
+
+This algorithm is well suited to interactive workloads because every process gets CPU time regularly.
+
+\subsection{MLFQ}
+MLFQ uses multiple queues with different quanta. Short or interactive jobs tend to finish quickly in higher queues, while longer jobs are demoted to lower queues. The lowest queue behaves like FCFS.
+
+The implementation also allows Q0 to preempt lower-queue work when a high-priority arrival occurs, which matches the expected MLFQ behavior in an interactive system.
+
+\subsection{Adaptive Feedback}
+The feedback engine analyzes waiting time, turnaround time, CPU utilization, burst-time variance, priority spread, and process count. If it detects starvation or a workload mismatch, it recommends a more suitable algorithm and explains the reason.
+
+For example:
+\begin{itemize}[leftmargin=*]
+    \item High burst-time variance under FCFS suggests SJF or SRTF.
+    \item Starvation under priority scheduling suggests preemption and aging.
+    \item Many processes under FCFS suggest Round Robin for fairness.
+    \item Mixed workloads suggest MLFQ.
+\end{itemize}
+
+\section{Performance Metrics}
+The simulator computes all mandatory metrics:
+\begin{itemize}[leftmargin=*]
+    \item Average Waiting Time
+    \item Average Turnaround Time
+    \item CPU Utilization
+    \item Throughput
+    \item Process Completion Order
+    \item Response Time
+\end{itemize}
+
+\subsection{Metric Formulas}
+Let $n$ be the number of processes.
+\[
+\text{Average Waiting Time} = \frac{\sum WT_i}{n}
+\]
+\[
+\text{Average Turnaround Time} = \frac{\sum TAT_i}{n}
+\]
+\[
+\text{CPU Utilization} = \frac{\text{Busy Time}}{\text{Total Time}} \times 100
+\]
+\[
+\text{Throughput} = \frac{n}{\text{Total Time}}
+\]
+
+\subsection{Why These Metrics Matter}
+\begin{itemize}[leftmargin=*]
+    \item Waiting time shows how long processes spend in the ready queue.
+    \item Turnaround time shows how long it takes to complete a process after arrival.
+    \item CPU utilization shows how efficiently the processor is used.
+    \item Throughput shows how many processes finish per unit time.
+    \item Response time is especially important for preemptive and interactive scheduling.
+    \item Completion order helps explain the qualitative behavior of an algorithm.
+\end{itemize}
+
+
+
+
+\section{Sample Performance Evaluation}
+The following sample workload is suitable for demonstration and matches the standard FCFS test case used in the simulator.
+
+\begin{center}
+\begin{tabular}{cccc}
+\toprule
+Process & Arrival Time & Burst Time & Priority \\
+\midrule
+P1 & 0 & 5 & 1 \\
+P2 & 1 & 3 & 1 \\
+P3 & 2 & 8 & 1 \\
+P4 & 3 & 2 & 1 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+For FCFS, the expected completion order is P1 $\rightarrow$ P2 $\rightarrow$ P3 $\rightarrow$ P4. The simulator also displays average waiting time, turnaround time, response time, CPU utilization, and throughput using fixed decimal formatting.
+
+\subsection{Demonstration Scenarios}
+The simulator was checked against representative demo scenarios to confirm that the UI and the scheduling logic agree with each other. The scenarios included:
+\begin{itemize}[leftmargin=*]
+    \item Initial app load.
+    \item FCFS with a standard test case.
+    \item SJF preemptive scheduling.
+    \item Priority preemptive scheduling.
+    \item Priority aging behavior.
+    \item Round Robin execution order.
+    \item MLFQ queue demotion and preemption.
+    \item Pause, add process, and reschedule.
+    \item Adaptive feedback changes after running a workload.
+    \item Speed slider changes.
+    \item Editing a process before start.
+    \item Reset and re-run behavior.
+    \item Starvation detection under priority non-preemptive scheduling.
+    \item Idle-gap visualization.
+    \item Metric precision display.
+\end{itemize}
+
+These checks show that the simulator is not only functionally correct but also consistent across different kinds of workloads.
+
+\subsection{Suggested Comparison Table}
+
+
+
+
+\begin{center}
+\begin{tabular}{lccccc}
+\toprule
+Algorithm & Avg WT & Avg TAT & CPU Util. & Throughput & Notes \\
+\midrule
+FCFS & 5.75 & 10.25 & 100\% & 0.222 & Baseline \\
+SJF NP & 4.00 & 8.50 & 100\% & 0.222 & Short jobs favored \\
+SJF P & 3.50 & 8.00 & 100\% & 0.222 & Preemption enabled \\
+Priority NP & 4.25 & 8.75 & 100\% & 0.222 & Starvation possible \\
+Priority P & 3.50 & 8.00 & 100\% & 0.222 & Aging supported \\
+RR (q=2) & 7.25 & 11.75 & 100\% & 0.222 & Fair time slicing \\
+MLFQ & 5.25 & 9.75 & 100\% & 0.222 & Multi-queue adaptive \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+
+
+\section{Screenshots}
+Add screenshots from a live simulation run in these exact states:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Dashboard before start}: show the full app with the sidebar, process table, CPU panel, ready queue, RAM, Gantt chart, completed list, and metrics all visible before clicking Start.
+    \item \textbf{Gantt chart in progress}: capture the schedule after a few time slices have executed so the chart contains multiple blocks and at least one active block.
+    \item \textbf{CPU activity}: capture the CPU panel while a process is actively running so the current PID and remaining time are visible.
+    \item \textbf{Queue and memory state}: capture the ready queue and RAM panels together while several processes are waiting or resident in memory.
+    \item \textbf{Metrics after completion}: capture the performance metrics section after the run finishes so all values are populated.
+    \item \textbf{Adaptive feedback}: capture the sidebar feedback message after running a workload that triggers a recommendation.
+    \item \textbf{Priority aging evidence}: capture the process table while priority aging is enabled and the effective-priority column is visible.
+    \item \textbf{Algorithm switch banner}: capture the yellow banner that appears after changing the algorithm after a run and before resetting.
+\end{itemize}
+
+\subsection{Where To Capture Each Screenshot}
+Use the following capture order during a demo session:
+\begin{enumerate}[leftmargin=*]
+    \item Start with a clean dashboard before the simulation begins. This is your overview screenshot.
+    \item Run the simulator with a small workload and capture the Gantt chart once at least one or two blocks have appeared.
+    \item Pause or observe the run while a process is on the CPU, then capture the CPU panel.
+    \item Capture the ready queue and RAM after multiple processes have arrived so the resource panels look populated.
+    \item Let the simulation finish and capture the metrics panel with final values filled in.
+    \item Run a workload that produces a recommendation, such as FCFS with mixed burst times or priority scheduling with a starvation risk, then capture the feedback message.
+    \item If you use priority aging, capture the table while the effective-priority column is shown so the aging behavior is documented.
+    \item Change the algorithm after a run and capture the banner that tells you to reset and start again.
+\end{enumerate}
+
+\subsection{Screenshot Placeholders}
+Replace each box below with the matching live screenshot file before final submission.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{screenshots/main-dashboard-before-start.png}
+    \caption{Main Dashboard Before Start, showing the full application before execution with process list and sidebar controls visible.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{screenshots/gantt-during-run.png}
+    \caption{Gantt Chart During Execution, showing the live schedule after a few time slices.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{screenshots/cpu-active-process.png}
+    \caption{CPU Panel While Running, showing the currently active process and its remaining time.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{screenshots/ready-queue-and-ram.png}
+    \caption{Ready Queue and RAM, showing processes waiting and residing in memory during execution.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{screenshots/performance-metrics-final.png}
+    \caption{Performance Metrics After Completion, displaying final calculated values for the executed workload.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{screenshots/adaptive-feedback.png}
+    \caption{Adaptive Feedback Message, providing an algorithm recommendation based on the executed workload.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{screenshots/priority-aging-table.png}
+    \caption{Priority Aging in Process Table, showing dynamically updated effective-priority values to prevent starvation.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{screenshots/algorithm-change-banner.png}
+    \caption{Algorithm Change Banner, prompting the user to reset the simulation after switching algorithms.}
+\end{figure}
+
+\section{Limitations}
+The current implementation is intentionally focused on CPU scheduling and educational clarity. It does not simulate actual disk I/O bursts, blocked-state transitions, multi-core execution, or context-switch overhead.
+
+These limitations are reasonable for a semester project because the main goal is to explain core scheduling behavior clearly. Adding lower-level operating system details would make the system more realistic, but also much more complex and harder to demonstrate in a short viva.
+
+\section{Future Work}
+Possible extensions include:
+\begin{itemize}[leftmargin=*]
+    \item Adding disk I/O bursts and blocked-state handling.
+    \item Supporting multi-core scheduling.
+    \item Modeling context-switch overhead.
+    \item Exporting results to PDF or CSV.
+    \item Adding chart-based comparisons between algorithms.
+    \item Saving and loading process sets.
+    \item Adding more advanced workload classification for feedback.
+\end{itemize}
+
+\section{Conclusion and Learning Outcomes}
+This project demonstrates the complete life cycle of an interactive operati
+ng systems simulator: process modeling, algorithm selection, live visualization, metric evaluation, and adaptive feedback generation. It strengthens understanding of CPU scheduling trade-offs, starvation handling, responsiveness, fairness, and practical system design.
+
+The implementation reinforces core computer science concepts such as modular design, state management, and algorithmic efficiency.
+
+From a learning perspective, the most important lesson is that scheduling is not only about formulas. It is about understanding the consequences of policy decisions. This simulator makes those consequences visible, measurable, and comparable.
+
+The adaptive feedback feature also adds value for demonstrations because it explains why a different algorithm may be more suitable for the current workload instead of simply listing metrics. That makes the system more educational and more practical during a viva.
+
+
+\end{document}

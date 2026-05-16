@@ -3,7 +3,7 @@ import Sidebar from './components/Sidebar';
 import RAMVisualization from './components/RAMVisualization';
 import ReadyQueue from './components/ReadyQueue';
 import CPUVisualization from './components/CPUVisualization';
-import CompletedProcesses from './components/CompletedProcesses';
+
 import ProcessTable from './components/ProcessTable';
 import GanttChart from './components/GanttChart';
 import PerformanceMetrics from './components/PerformanceMetrics';
@@ -38,7 +38,7 @@ function App() {
   const [timeQuantum, setTimeQuantum] = useState(2);
   const [mlfqLevels, setMlfqLevels] = useState(3);
   const [mlfqQuantums, setMlfqQuantums] = useState<number[]>([2, 4]);
-  const [speed, setSpeed] = useState(5);
+  const [speed, setSpeed] = useState(1);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [simulationTime, setSimulationTime] = useState(0);
@@ -49,6 +49,9 @@ function App() {
   const [agingInterval, setAgingInterval] = useState(5);
   const [showAlgorithmChangeBanner, setShowAlgorithmChangeBanner] = useState(false);
   const prevAlgorithmRef = useRef<SchedulingAlgorithm>(algorithm);
+
+  const [notifications, setNotifications] = useState<{ id: string; pid: string; color: string; }[]>([]);
+  const prevCompletedRef = useRef<Set<string>>(new Set());
 
   const handleAddProcess = useCallback((arrivalTime: number, burstTime: number, priority: number) => {
     const activeCount = processes.filter(p => p.status !== 'Completed').length;
@@ -161,6 +164,8 @@ function App() {
     // Instead compute initial animation snapshot at time=0.
     setAnimProcesses(computeAnimationState(processes, result.ganttBlocks, 0));
     setMetrics(EMPTY_METRICS);
+    setNotifications([]);
+    prevCompletedRef.current.clear();
   }, [processes, algorithm, timeQuantum, mlfqLevels, mlfqQuantums, agingEnabled, agingInterval]);
 
   const handlePause = useCallback(() => {
@@ -213,6 +218,8 @@ function App() {
     setLargeBurstWarning('');
     setIsSimulationComplete(false);
     setShowAlgorithmChangeBanner(false);
+    setNotifications([]);
+    prevCompletedRef.current.clear();
   }, []);
 
   // Show banner when algorithm changes after a run has occurred
@@ -343,6 +350,24 @@ function App() {
 
   const showPriorityColumn = algorithm === 'priority-preemptive' || algorithm === 'priority-non-preemptive';
 
+  // Trigger notifications for newly completed processes
+  useEffect(() => {
+    if (completedProcesses.length > 0) {
+      const newCompleted = completedProcesses.filter(p => !prevCompletedRef.current.has(p.id));
+      if (newCompleted.length > 0) {
+        newCompleted.forEach(p => {
+          prevCompletedRef.current.add(p.id);
+          const notifId = Date.now() + '-' + p.id;
+          setNotifications(prev => [...prev, { id: notifId, pid: p.pid, color: p.color }]);
+          
+          setTimeout(() => {
+            setNotifications(prev => prev.filter(n => n.id !== notifId));
+          }, 3500); // Hide after 3.5 seconds
+        });
+      }
+    }
+  }, [completedProcesses]);
+
   // Compute display processes: when paused, merge new processes into animation snapshot
   const displayProcesses = isPaused && isRunning
     ? [
@@ -351,12 +376,26 @@ function App() {
           !animProcesses.some(a => a.id === p.id)
         ),
       ]
-    : isRunning
+    : (isRunning || isSimulationComplete)
       ? animProcesses
       : processes;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#0a0a1a]">
+    <div className="flex h-screen overflow-hidden bg-[#0a0a1a] relative">
+      {/* Notifications */}
+      <div className="absolute top-6 right-6 z-50 flex flex-col gap-3 pointer-events-none">
+        {notifications.map(n => (
+          <div 
+            key={n.id} 
+            className="glass-panel px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 border border-[#2a2a45] transition-all duration-300 opacity-100"
+            style={{ borderLeft: `4px solid ${n.color}` }}
+          >
+            <div className="w-2.5 h-2.5 rounded-full" style={{ background: n.color, boxShadow: `0 0 8px ${n.color}` }} />
+            <span className="text-white text-sm font-semibold tracking-wide">Process {n.pid} Completed</span>
+          </div>
+        ))}
+      </div>
+
       {/* LEFT COLUMN — Controls */}
       <Sidebar
         processes={processes}
@@ -418,7 +457,6 @@ function App() {
         )}
 
         <CPUVisualization currentProcess={currentProcess} isRunning={isRunning} />
-        <CompletedProcesses processes={completedProcesses} />
         <ProcessTable 
           processes={processes} 
           onRemoveProcess={handleRemoveProcess}
