@@ -365,82 +365,57 @@ MLFQ & 5.25 & 9.75 & 100\% & 0.222 & Multi-queue adaptive \\
 
 
 
-\section{Screenshots}
-Add screenshots from a live simulation run in these exact states:
-\begin{itemize}[leftmargin=*]
-    \item \textbf{Dashboard before start}: show the full app with the sidebar, process table, CPU panel, ready queue, RAM, Gantt chart, completed list, and metrics all visible before clicking Start.
-    \item \textbf{Gantt chart in progress}: capture the schedule after a few time slices have executed so the chart contains multiple blocks and at least one active block.
-    \item \textbf{CPU activity}: capture the CPU panel while a process is actively running so the current PID and remaining time are visible.
-    \item \textbf{Queue and memory state}: capture the ready queue and RAM panels together while several processes are waiting or resident in memory.
-    \item \textbf{Metrics after completion}: capture the performance metrics section after the run finishes so all values are populated.
-    \item \textbf{Adaptive feedback}: capture the sidebar feedback message after running a workload that triggers a recommendation.
-    \item \textbf{Priority aging evidence}: capture the process table while priority aging is enabled and the effective-priority column is visible.
-    \item \textbf{Algorithm switch banner}: capture the yellow banner that appears after changing the algorithm after a run and before resetting.
-\end{itemize}
 
-\subsection{Where To Capture Each Screenshot}
-Use the following capture order during a demo session:
-\begin{enumerate}[leftmargin=*]
-    \item Start with a clean dashboard before the simulation begins. This is your overview screenshot.
-    \item Run the simulator with a small workload and capture the Gantt chart once at least one or two blocks have appeared.
-    \item Pause or observe the run while a process is on the CPU, then capture the CPU panel.
-    \item Capture the ready queue and RAM after multiple processes have arrived so the resource panels look populated.
-    \item Let the simulation finish and capture the metrics panel with final values filled in.
-    \item Run a workload that produces a recommendation, such as FCFS with mixed burst times or priority scheduling with a starvation risk, then capture the feedback message.
-    \item If you use priority aging, capture the table while the effective-priority column is shown so the aging behavior is documented.
-    \item Change the algorithm after a run and capture the banner that tells you to reset and start again.
-\end{enumerate}
+\subsection{Output Screenshots}
 
-\subsection{Screenshot Placeholders}
-Replace each box below with the matching live screenshot file before final submission.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{screenshots/main-dashboard-before-start.png}
+    \includegraphics[width=0.9\textwidth]{ss1.png}
     \caption{Main Dashboard Before Start, showing the full application before execution with process list and sidebar controls visible.}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{screenshots/gantt-during-run.png}
+    \includegraphics[width=0.9\textwidth]{ss2.png}
     \caption{Gantt Chart During Execution, showing the live schedule after a few time slices.}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{screenshots/cpu-active-process.png}
+    \includegraphics[width=0.9\textwidth]{ss3.png}
     \caption{CPU Panel While Running, showing the currently active process and its remaining time.}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{screenshots/ready-queue-and-ram.png}
-    \caption{Ready Queue and RAM, showing processes waiting and residing in memory during execution.}
+    \includegraphics[height=8cm, keepaspectratio]{ss4.png}
+    \caption{RAM, showing processes waiting and residing in memory during execution.}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \makebox[\textwidth][c]{\includegraphics[width=0.85\textwidth]{ss4.2.png}}
+    \caption{Ready Queue, showing processes waiting and residing in memory during execution.}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{screenshots/performance-metrics-final.png}
+    \includegraphics[width=0.9\textwidth]{ss5.png}
     \caption{Performance Metrics After Completion, displaying final calculated values for the executed workload.}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{screenshots/adaptive-feedback.png}
+    \includegraphics[width=0.4\textwidth]{ss6.png}
     \caption{Adaptive Feedback Message, providing an algorithm recommendation based on the executed workload.}
 \end{figure}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{screenshots/priority-aging-table.png}
+    \includegraphics[width=0.9\textwidth]{ss7.png}
     \caption{Priority Aging in Process Table, showing dynamically updated effective-priority values to prevent starvation.}
 \end{figure}
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.9\textwidth]{screenshots/algorithm-change-banner.png}
-    \caption{Algorithm Change Banner, prompting the user to reset the simulation after switching algorithms.}
-\end{figure}
 
 \section{Limitations}
 The current implementation is intentionally focused on CPU scheduling and educational clarity. It does not simulate actual disk I/O bursts, blocked-state transitions, multi-core execution, or context-switch overhead.
@@ -457,6 +432,17 @@ Possible extensions include:
     \item Adding chart-based comparisons between algorithms.
     \item Saving and loading process sets.
     \item Adding more advanced workload classification for feedback.
+\end{itemize}
+
+\section{Project Links}
+The source code and live deployment of this project are available at the following links:
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Live Deployment:} \\
+    \url{https://[your-netlify-url].netlify.app}
+    \item \textbf{Umm-e-Habiba's GitHub:} \\
+    \url{https://github.com/habiba-imran/Interactive-CPU-Scheduling--Simulator}
+    \item \textbf{Zainab's GitHub:} \\
+    \url{https://github.com/[zainab-github-username]/[repo-name]}
 \end{itemize}
 
 \section{Conclusion and Learning Outcomes}
